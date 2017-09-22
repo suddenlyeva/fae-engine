@@ -429,7 +429,12 @@ namespace gstd
 				case type_data::tk_real:
 				{
 					wchar_t buffer[128];
-					std::swprintf(buffer, L"%Lf", data->real_value);
+					long double isInt;
+					if (modf(data->real_value, &isInt) == 0.0) {
+						std::swprintf(buffer, L"%d", static_cast < int > (data->real_value));
+					} else {
+						std::swprintf(buffer, L"%Lf", data->real_value);
+					}
 					return std::wstring(buffer);
 				}
 
