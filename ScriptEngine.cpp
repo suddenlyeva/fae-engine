@@ -83,7 +83,7 @@ enum token_kind
 	tk_ampersand, tk_and_then, tk_vertical, tk_or_else, tk_at, tk_add_assign, tk_subtract_assign, tk_multiply_assign,
 	tk_divide_assign, tk_remainder_assign, tk_power_assign, tk_range, tk_ALTERNATIVE, tk_ASCENT, tk_BREAK, tk_CASE, tk_DESCENT,
 	tk_ELSE, tk_FUNCTION, tk_IF, tk_IN, tk_LET, tk_LOCAL, tk_LOOP, tk_OTHERS, tk_REAL, tk_RETURN, tk_SUB, tk_TASK,
-	tk_TIMES, tk_WHILE, tk_YIELD
+	tk_TIMES, tk_WHILE, tk_YIELD, tk_EXIT
 };
 
 class scanner
@@ -470,6 +470,8 @@ void scanner::advance()
 				next = tk_WHILE;
 			else if (word == "yield")
 				next = tk_YIELD;
+			else if (word == "exit")
+				next = tk_EXIT;
 		}
 		else
 		{
@@ -862,7 +864,9 @@ value concatenate(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 2);
 
-	if (argv[0].get_type()->get_kind() != type_data::tk_array || argv[1].get_type()->get_kind() != type_data::tk_array)
+	if (argv[0].get_type()->get_kind() != type_data::tk_array || 
+		argv[1].get_type()->get_kind() != type_data::tk_array &&
+		argv[0].get_type()->get_element()->get_kind() != type_data::tk_char)
 	{
 		machine->raise_error("”z—ñˆÈŠO‚Éconcatenate‚ðŽg‚¢‚Ü‚µ‚½");
 		return value();
@@ -874,8 +878,11 @@ value concatenate(script_machine * machine, int argc, value const * argv)
 		return value();
 	}
 
+	value append = (argv[0].get_type()->get_element()->get_kind() == type_data::tk_char) ?
+		value(machine->get_engine()->get_string_type(), argv[1].as_string()) : argv[1];
+	
 	value result = argv[0];
-	result.concatenate(argv[1]);
+	result.concatenate(append);
 	return result;
 }
 
@@ -1827,6 +1834,11 @@ void parser::parse_statements(script_engine::block * block)
 			lex->advance();
 			block->codes.push_back(code(lex->line, script_engine::pc_yield));
 		}
+		else if (lex->next == tk_EXIT)
+		{
+			lex->advance();
+			block->codes.push_back(code(lex->line, script_engine::pc_exit));
+		}
 		else if (lex->next == tk_at || lex->next == tk_SUB || lex->next == tk_FUNCTION || lex->next == tk_TASK)
 		{
 			bool is_event = lex->next == tk_at;
@@ -2484,6 +2496,10 @@ void script_machine::advance()
 
 		case script_engine::pc_yield:
 			yield();
+			break;
+
+		case script_engine::pc_exit:
+			stop();
 			break;
 
 		default:

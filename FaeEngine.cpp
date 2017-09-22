@@ -39,19 +39,18 @@ gstd::value func_to_string(gstd::script_machine* machine, int argc, gstd::value 
 	return gstd::value(machine->get_engine()->get_string_type(), res);
 }
 
-gstd::value func_exit(gstd::script_machine* machine, int argc, gstd::value const * argv)
+gstd::value func_length(gstd::script_machine* machine, int argc, gstd::value const * argv)
 {
-	machine->stop();
-	return gstd::value();
+	long double res = argv[0].length_as_array();
+	return gstd::value(machine->get_engine()->get_real_type(), res);
 }
-
 gstd::function const sampleScriptFunction[] =  
 {
 	{"print", func_print, 1},
 	{"min", func_min, 2},
 	{"max", func_max, 2},
 	{"to_string", func_to_string, 1},
-	{ "exit", func_exit, 0 },
+	{"length", func_length, 1 },
 };
 //----------------------------------------------------------------
 
