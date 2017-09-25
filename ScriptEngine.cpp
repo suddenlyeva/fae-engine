@@ -876,24 +876,22 @@ value concatenate(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 2);
 
-	if (argv[0].get_type()->get_kind() != type_data::tk_array || 
-		argv[1].get_type()->get_kind() != type_data::tk_array &&
-		argv[0].get_type()->get_element()->get_kind() != type_data::tk_char)
-	{
-		machine->raise_error("”z—ñˆÈŠO‚Éconcatenate‚ðŽg‚¢‚Ü‚µ‚½");
-		return value();
+	value result = argv[0];
+	value append = argv[1];
+
+	if (result.get_type()->get_kind() != type_data::tk_array) {
+		result = value(machine->get_engine()->get_string_type(),result.as_string());
+	}
+	if (append.get_type()->get_kind() != type_data::tk_array) {
+		append = value(machine->get_engine()->get_string_type(),append.as_string());
 	}
 
 	if (argv[0].length_as_array() > 0 && argv[1].length_as_array() > 0 && argv[0].get_type() != argv[1].get_type())
 	{
-		machine->raise_error("Type mismatch"); //Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ
+		machine->raise_error("Type mismatch on array concatenation."); //Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ
 		return value();
 	}
 
-	value append = (argv[0].get_type()->get_element()->get_kind() == type_data::tk_char) ?
-		value(machine->get_engine()->get_string_type(), argv[1].as_string()) : argv[1];
-	
-	value result = argv[0];
 	result.concatenate(append);
 	return result;
 }
