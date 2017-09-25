@@ -704,6 +704,13 @@ value not_(script_machine * machine, int argc, value const * argv)
 value length(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 1);
+
+	if (argv[0].get_type()->get_kind() != type_data::tk_array)
+	{
+		machine->raise_error("Cannot find length of non-array element.");
+		return value();
+	}
+
 	return value(machine->get_engine()->get_real_type(), static_cast < long double > (argv[0].length_as_array()));
 }
 
@@ -1683,13 +1690,22 @@ void parser::parse_statements(script_engine::block * block)
 				throw parser_error("must be in"); //"inが必要です" - translated
 			lex->advance();
 
-			parse_expression(block);
+			if (lex->next == tk_word) {
+				// TODO REFACTOR
+				// push 0 and array length
+				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_real_type(), 0.0L)));
+				parse_expression(block);
+				write_operation(block, "length", 1);
+			}
+			else {
+				parse_expression(block);
 
-			if (lex->next != tk_range)
-				throw parser_error("\"..\" must be required"); //"\"..\"が必要です" - translated
-			lex->advance();
+				if (lex->next != tk_range)
+					throw parser_error("\"..\" must be required"); //"\"..\"が必要です" - translated
+				lex->advance();
 
-			parse_expression(block);
+				parse_expression(block);
+			}
 
 			if (lex->next != tk_close_par)
 				throw parser_error("\")\" is required"); //"\")\"が必要です" - translated
