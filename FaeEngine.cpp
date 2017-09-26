@@ -44,7 +44,7 @@ gstd::function const sampleScriptFunction[] =
 	{"print", func_print, 1},
 	{"min", func_min, 2},
 	{"max", func_max, 2},
-	{"to_string", func_to_string, 1},
+	{"toString", func_to_string, 1},
 };
 //----------------------------------------------------------------
 
@@ -129,6 +129,8 @@ void RunSample(char* scriptName)
 	machine.run();
 	ErrorHandle::CheckMachineError(machine);
 
+	//--------------------------------
+	//call @Setup
 	if (machine.has_event("Setup")) {
 		machine.call("Setup");
 		ErrorHandle::CheckMachineError(machine);
@@ -144,16 +146,4 @@ void RunSample(char* scriptName)
 		}
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000/60));
 	}
-	/*
-	//--------------------------------
-	//call @MainLoop 7times
-	for(int iLoop = 0 ; iLoop < 7 ; iLoop++)
-	{
-		if(machine.has_event("MainLoop"))
-		{
-			machine.call("MainLoop");
-			ErrorHandle::CheckMachineError(machine);
-		}		
-	}
-	*/
 }

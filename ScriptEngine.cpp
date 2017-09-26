@@ -1689,7 +1689,6 @@ void parser::parse_statements(script_engine::block * block)
 			lex->advance();
 
 			if (lex->next == tk_word) {
-				// TODO REFACTOR
 				// push 0 and array length
 				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_real_type(), 0.0L)));
 				parse_expression(block);
