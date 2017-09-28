@@ -78,11 +78,11 @@ const char * parser_error::what() const throw()
 enum token_kind
 {
 	tk_end, tk_invalid, tk_word, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
-	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_semicolon, tk_tilde, tk_assign, tk_plus, tk_minus,
+	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
 	tk_inc, tk_dec, tk_asterisk, tk_slash, tk_percent, tk_caret, tk_e, tk_g, tk_ge, tk_l, tk_le, tk_ne, tk_exclamation,
 	tk_ampersand, tk_and_then, tk_vertical, tk_or_else, tk_at, tk_add_assign, tk_subtract_assign, tk_multiply_assign,
-	tk_divide_assign, tk_remainder_assign, tk_power_assign, tk_concat_assign, tk_range, tk_ALTERNATIVE, tk_FOR, tk_BREAK, tk_CASE, tk_REVERSE,
-	tk_ELSE, tk_FUNCTION, tk_IF, tk_IN, tk_LET, tk_LOCAL, tk_LOOP, tk_OTHERS, tk_REAL, tk_RETURN, tk_SUB, tk_TASK,
+	tk_divide_assign, tk_remainder_assign, tk_power_assign, tk_concat_assign, tk_range, tk_EVENTS, tk_FOR, tk_BREAK, tk_ON, tk_REVERSE,
+	tk_ELSE, tk_FUNCTION, tk_IF, tk_IN, tk_LET, tk_LOCAL, tk_LOOP, tk_REAL, tk_RETURN, tk_SUB, tk_TASK,
 	tk_TIMES, tk_WHILE, tk_YIELD, tk_EXIT
 };
 
@@ -252,6 +252,11 @@ void scanner::advance()
 		if (*current == '=')
 		{
 			next = tk_e;
+			++current;
+		}
+		if (*current == '>')
+		{
+			next = tk_arrow;
 			++current;
 		}
 		break;
@@ -435,14 +440,14 @@ void scanner::advance()
 				++current;
 			} while (std::isalpha(*current) || *current == '_' || std::isdigit(*current));
 
-			if (word == "alternative")
-				next = tk_ALTERNATIVE;
+			if (word == "events")
+				next = tk_EVENTS;
 			else if (word == "for")
 				next = tk_FOR;
 			else if (word == "break")
 				next = tk_BREAK;
-			else if (word == "case")
-				next = tk_CASE;
+			else if (word == "on")
+				next = tk_ON;
 			else if (word == "reverse")
 				next = tk_REVERSE;
 			else if (word == "else")
@@ -459,8 +464,6 @@ void scanner::advance()
 				next = tk_LOCAL;
 			else if (word == "loop")
 				next = tk_LOOP;
-			else if (word == "others")
-				next = tk_OTHERS;
 			else if (word == "real")
 				next = tk_REAL;
 			else if (word == "return")
@@ -1666,7 +1669,6 @@ void parser::parse_statements(script_engine::block * block)
 		else if (lex->next == tk_FOR)
 		{
 			lex->advance();
-
 			bool back = lex->next == tk_REVERSE;
 
 			if (lex->next == tk_REVERSE)
@@ -1778,12 +1780,17 @@ void parser::parse_statements(script_engine::block * block)
 			block->codes.push_back(code(lex->line, script_engine::pc_case_end));
 			need_semicolon = false;
 		}
-		else if (lex->next == tk_ALTERNATIVE)
+		else if (lex->next == tk_EVENTS)
 		{
 			lex->advance();
 			parse_parentheses(block);
+
+			if (lex->next != tk_arrow)
+				throw parser_error("\"=>\" is needed");
+			lex->advance();
+
 			block->codes.push_back(code(lex->line, script_engine::pc_case_begin));
-			while (lex->next == tk_CASE)
+			while (lex->next == tk_ON)
 			{
 				lex->advance();
 
@@ -1814,16 +1821,15 @@ void parser::parse_statements(script_engine::block * block)
 				parse_inline_block(block, script_engine::bk_normal);
 				block->codes.push_back(code(lex->line, script_engine::pc_case_next));
 			}
-			if (lex->next == tk_OTHERS)
-			{
-				lex->advance();
-				block->codes.push_back(code(lex->line, script_engine::pc_pop));
-				parse_inline_block(block, script_engine::bk_normal);
-			}
-			else
-			{
-				block->codes.push_back(code(lex->line, script_engine::pc_pop));
-			}
+
+			if (lex->next != tk_ELSE)
+				throw parser_error("Event switch must end with \"else\" statement.");
+
+			lex->advance();
+
+			block->codes.push_back(code(lex->line, script_engine::pc_pop));
+			parse_inline_block(block, script_engine::bk_normal);
+
 			block->codes.push_back(code(lex->line, script_engine::pc_case_end));
 			need_semicolon = false;
 		}
