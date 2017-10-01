@@ -889,7 +889,7 @@ value concatenate(script_machine * machine, int argc, value const * argv)
 		append = value(machine->get_engine()->get_string_type(),append.as_string());
 	}
 
-	if (argv[0].length_as_array() > 0 && argv[1].length_as_array() > 0 && argv[0].get_type() != argv[1].get_type())
+	if (result.length_as_array() > 0 && append.length_as_array() > 0 && result.get_type() != append.get_type())
 	{
 		machine->raise_error("Type mismatch on array concatenation."); //Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ
 		return value();
@@ -2201,7 +2201,7 @@ void script_machine::advance()
 					if (dest->has_data() && dest->get_type() != src->get_type()
 						&& !(dest->get_type()->get_kind() == type_data::tk_array
 							&& src->get_type()->get_kind() == type_data::tk_array
-							&& (dest->length_as_array() > 0 || src->length_as_array() > 0)))
+							&& (dest->length_as_array() == 0 || src->length_as_array() == 0)))
 						raise_error("‘ã“ü‚É‚æ‚Á‚ÄŒ^‚ª•Ï‚¦‚ç‚ê‚æ‚¤‚Æ‚µ‚Ü‚µ‚½"); //type was changed by the assignment
 					*dest = *src;
 					stack->pop_back();
@@ -2219,7 +2219,7 @@ void script_machine::advance()
 			value * src = &stack->at[stack->length - 1];
 			if (dest->has_data() && dest->get_type() != src->get_type()
 				&& !(dest->get_type()->get_kind() == type_data::tk_array && src->get_type()->get_kind() == type_data::tk_array
-					&& (dest->length_as_array() > 0 || src->length_as_array() > 0)))
+					&& (dest->length_as_array() == 0 || src->length_as_array() == 0)))
 				raise_error("‘ã“ü‚É‚æ‚Á‚ÄŒ^‚ª•Ï‚¦‚ç‚ê‚æ‚¤‚Æ‚µ‚Ü‚µ‚½");	//type was changed by the assignment
 			else
 			{
