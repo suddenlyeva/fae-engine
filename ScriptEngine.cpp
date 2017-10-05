@@ -78,7 +78,7 @@ const char * parser_error::what() const throw()
 enum token_kind
 {
 	tk_end, tk_invalid, tk_word, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
-	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
+	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_colon, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
 	tk_inc, tk_dec, tk_asterisk, tk_slash, tk_percent, tk_caret, tk_e, tk_g, tk_ge, tk_l, tk_le, tk_ne, tk_exclamation,
 	tk_ampersand, tk_and_then, tk_vertical, tk_or_else, tk_at, tk_add_assign, tk_subtract_assign, tk_multiply_assign,
 	tk_divide_assign, tk_remainder_assign, tk_power_assign, tk_concat_assign, tk_range, tk_EVENTS, tk_FOR, tk_BREAK, tk_ON, tk_REVERSE,
@@ -195,6 +195,10 @@ void scanner::advance()
 		break;
 	case ',':
 		next = tk_comma;
+		++current;
+		break;
+	case ':':
+		next = tk_colon;
 		++current;
 		break;
 	case ';':
