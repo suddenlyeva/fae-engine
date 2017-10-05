@@ -1321,6 +1321,14 @@ void parser::parse_clause(script_engine::block * block)
 	{
 		parse_parentheses(block);
 	}
+	else if (lex->next == tk_open_cur)
+	{
+		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_object_type())));
+		lex->advance();
+		if (lex->next != tk_close_cur)
+			throw parser_error("Expected token: \"}\""); 
+		lex->advance();
+	}
 	else
 	{
 		throw parser_error("There is not a valid expression term"); //€‚Æ‚µ‚Ä–³Œø‚È®‚ª‚ ‚è‚Ü‚·

@@ -543,6 +543,10 @@ namespace gstd
 						return result;
 					}
 				}
+				case type_data::tk_object:
+				{
+					return L"Object";
+				}
 				default:
 					return L"(INTERNAL-ERROR)";
 				}
@@ -612,6 +616,7 @@ namespace gstd
 		type_data * char_type;
 		type_data * boolean_type;
 		type_data * string_type;
+		type_data * object_type;
 	public:
 		script_type_manager()
 		{
@@ -619,6 +624,7 @@ namespace gstd
 			char_type = &* types.insert(types.end(), type_data(type_data::tk_char));
 			boolean_type = &* types.insert(types.end(), type_data(type_data::tk_boolean));
 			string_type = &* types.insert(types.end(), type_data(type_data::tk_array, char_type));
+			object_type = &* types.insert(types.end(), type_data(type_data::tk_object));
 		}
 
 		type_data * get_real_type()
@@ -651,6 +657,11 @@ namespace gstd
 				}
 			}
 			return &* types.insert(types.end(), type_data(type_data::tk_array, element));
+		}
+
+		type_data * get_object_type()
+		{
+			return object_type;
 		}
 
 	};
@@ -801,6 +812,11 @@ namespace gstd
 		type_data * get_string_type()
 		{
 			return type_manager->get_string_type();
+		}
+
+		type_data * get_object_type()
+		{
+			return type_manager->get_object_type();
 		}
 
 		void * data;	// space for the client //クライアント用空間 //not really needed. DirectX perhaps? 
