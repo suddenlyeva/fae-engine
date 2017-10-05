@@ -9,6 +9,7 @@
 #include<list>
 #include<string>
 #include<map>
+#include<unordered_map>
 
 //重複宣言チェックをしない
 //#define __SCRIPT_H__NO_CHECK_DUPLICATED
@@ -190,7 +191,7 @@ namespace gstd
 	public:
 		enum type_kind
 		{
-			tk_real, tk_char, tk_boolean, tk_array
+			tk_real, tk_char, tk_boolean, tk_array, tk_object
 		};
 
 		type_data(type_kind k, type_data * t = NULL) : kind(k), element(t)
@@ -221,11 +222,18 @@ namespace gstd
 	class value
 	{
 	private:
+
+		struct object {
+			int ref_count;
+			std::unordered_map<std::wstring, value> properties;
+		};
+
 		struct body
 		{
 			int ref_count;
 			type_data * type;
 			lightweight_vector<value> array_value;
+			object * object_value = NULL;
 
 			union
 			{
@@ -241,6 +249,20 @@ namespace gstd
 	public:
 		value() : data(NULL)
 		{
+		}
+
+		value(type_data * t)
+		{
+			if (t->get_kind() == t->tk_object) {
+				data = new body();
+				data->ref_count = 1;
+				data->type = t;
+				data->object_value = new object();
+				data->object_value->ref_count = 1;
+			}
+			else {
+				data = NULL;
+			}
 		}
 
 		value(type_data * t, long double v)
@@ -276,17 +298,34 @@ namespace gstd
 				data->array_value.push_back(value(t->get_element(), v[i]));
 		}
 
+		value(type_data * t, object * o)
+		{
+				data = new body();
+				data->ref_count = 1;
+				data->type = t;
+				data->object_value = o;
+				data->object_value->ref_count++;
+		}
+
 		value(value const & source)
 		{
 			data = source.data;
-			if (data != NULL)
+			if (data != NULL) {
 				++(data->ref_count);
+				if (data->object_value != NULL)
+					++(data->object_value->ref_count);
+			}
 		}
 
 		~value()
 		{
 			if (data != NULL)
 			{
+				if (data->object_value != NULL) {
+					--(data->object_value->ref_count);
+					if (data->object_value->ref_count == 0)
+						delete data->object_value;
+				}
 				--(data->ref_count);
 				if (data->ref_count == 0)
 					delete data;
@@ -298,9 +337,17 @@ namespace gstd
 			if (source.data != NULL)
 			{
 				++(source.data->ref_count);
+				if (source.data->object_value != NULL)
+					++(source.data->object_value->ref_count);
+
 			}
 			if (data != NULL)
 			{
+				if (data->object_value != NULL) {
+					--(data->object_value->ref_count);
+					if (data->object_value->ref_count == 0)
+						delete data->object_value;
+				}
 				--(data->ref_count);
 				if (data->ref_count == 0)
 					delete data;
@@ -326,6 +373,32 @@ namespace gstd
 			unique();
 			data->type = t;
 			data->boolean_value = v;
+		}
+
+		bool register_property(const std::wstring & name, const value & val)
+		{
+			if (data->object_value != NULL)
+				return std::get<1>(data->object_value->properties.try_emplace(name, val));
+
+			return false;
+		}
+
+		const value get_property(const std::wstring & name) const
+		{
+			if (data->object_value != NULL)
+				return data->object_value->properties.at(name);
+
+			return value();
+		}
+
+		bool set_property(const std::wstring & name, const value & val)
+		{
+			if (data->object_value != NULL) {
+				data->object_value->properties.at(name) = val;
+				return true;
+			}
+
+			return false;
 		}
 
 		void append(type_data * t, value const & x)
