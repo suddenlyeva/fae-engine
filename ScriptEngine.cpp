@@ -951,6 +951,19 @@ value assert_(script_machine * machine, int argc, value const * argv)
 	return value();
 }
 
+value obj_register_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 3);
+
+	value o = argv[2];
+	if (o.get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot register property to non-object value.");
+	if (!o.register_property(argv[0].as_string(), argv[1]))
+		machine->raise_error("A property already exists with this name.");
+
+	return o;
+}
+
 function const operations[] =
 {
 	{ "true", true_, 0 },
@@ -980,7 +993,8 @@ function const operations[] =
 	{ "append", append, 2 },
 	{ "concatenate", concatenate, 2 },
 	{ "compare", compare, 2 },
-	{ "assert", assert_, 2 }
+	{ "assert", assert_, 2 },
+	{ "obj_register_property", obj_register_property, 3 }
 };
 
 
@@ -1323,10 +1337,39 @@ void parser::parse_clause(script_engine::block * block)
 	}
 	else if (lex->next == tk_open_cur)
 	{
-		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_object_type())));
+		block->codes.push_back(code(lex->line, script_engine::pc_push_value, engine->get_object_type()));
+
 		lex->advance();
+
+		while (lex->next != tk_close_cur) {
+
+			if (lex->next != tk_word)
+				throw parser_error("Expected property identifier.");
+			block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+			block->codes.push_back(code(lex->line, script_engine::pc_swap));
+			lex->advance();
+
+			if (lex->next != tk_colon)
+				throw parser_error("Expected token: \":\"");
+			lex->advance();
+
+			parse_expression(block);
+			block->codes.push_back(code(lex->line, script_engine::pc_swap));
+
+			write_operation(block, "obj_register_property", 3);
+
+			if (lex->next != tk_comma) {
+				break;
+			}
+
+			lex->advance();
+			if (lex->next != tk_word)
+				throw parser_error("Expected property identifier.");
+		}
+
 		if (lex->next != tk_close_cur)
-			throw parser_error("Expected token: \"}\""); 
+			throw parser_error("Expected token: \"}\"");
+
 		lex->advance();
 	}
 	else
