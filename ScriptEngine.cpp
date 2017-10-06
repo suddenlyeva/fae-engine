@@ -979,6 +979,21 @@ value obj_get_property(script_machine * machine, int argc, value const * argv)
 	return result;
 }
 
+value obj_set_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 3);
+
+	value o = argv[0];
+
+	if (o.get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot set property for non-object value.");
+
+	if (!o.set_property(argv[1].as_string(), argv[2]))
+		machine->raise_error("Type mismatch on property assignment.");
+
+	return o;
+}
+
 function const operations[] =
 {
 	{ "true", true_, 0 },
@@ -1010,7 +1025,8 @@ function const operations[] =
 	{ "compare", compare, 2 },
 	{ "assert", assert_, 2 },
 	{ "obj_register_property", obj_register_property, 3 },
-	{ "obj_get_property", obj_get_property, 2 }
+	{ "obj_get_property", obj_get_property, 2 },
+	{ "obj_set_property", obj_set_property, 3 }
 };
 
 
@@ -1389,6 +1405,7 @@ void parser::parse_clause(script_engine::block * block)
 		lex->advance();
 	}
 	else if (lex->next == tk_obj_id) {
+
 		symbol * s = search(lex->word);
 		if (s == NULL)
 			throw parser_error("Unknown object: " + lex->word);
@@ -1690,6 +1707,101 @@ void parser::parse_statements(script_engine::block * block)
 
 				block->codes.push_back(code(lex->line, script_engine::pc_call, s->sub, argc));
 			}
+		}
+		else if (lex->next == tk_obj_id)
+		{
+			symbol * s = search(lex->word);
+			if (s == NULL)
+				throw parser_error("Object not found: " + lex->word);
+			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+			lex->advance();
+
+			if (lex->next != tk_word && lex->next != tk_obj_id)
+				throw parser_error("Expected property identifier.");
+
+			while (lex->next == tk_word || lex->next == tk_obj_id) {
+				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+				if (lex->next == tk_word) {
+					break;
+				}
+				write_operation(block, "obj_get_property", 2);
+				lex->advance();
+			}
+
+			lex->advance();
+
+			switch (lex->next) {
+				case tk_assign:
+					lex->advance();
+					parse_expression(block);
+					break;
+
+				case tk_add_assign:
+				case tk_subtract_assign:
+				case tk_multiply_assign:
+				case tk_divide_assign:
+				case tk_remainder_assign:
+				case tk_power_assign:
+				case tk_concat_assign:
+				{
+					char const * f;
+					switch (lex->next)
+					{
+					case tk_add_assign:
+						f = "add";
+						break;
+					case tk_subtract_assign:
+						f = "subtract";
+						break;
+					case tk_multiply_assign:
+						f = "multiply";
+						break;
+					case tk_divide_assign:
+						f = "divide";
+						break;
+					case tk_remainder_assign:
+						f = "remainder";
+						break;
+					case tk_power_assign:
+						f = "power";
+						break;
+					case tk_concat_assign:
+						f = "concatenate";
+						break;
+					default:
+						throw parser_error("Mismatched token definition.");
+
+					}
+					lex->advance();
+
+					block->codes.push_back(code(lex->line, script_engine::pc_dup2));
+					write_operation(block, "obj_get_property", 2);
+
+					parse_expression(block);
+					write_operation(block, f, 2);
+				}
+				break;
+
+				case tk_inc:
+				case tk_dec:
+				{
+					char const * f = (lex->next == tk_inc) ? "successor" : "predecessor";
+					lex->advance();
+
+					block->codes.push_back(code(lex->line, script_engine::pc_dup2));
+					write_operation(block, "obj_get_property", 2);
+					write_operation(block, f, 1);
+				}
+				break;
+
+				default:
+					throw parser_error("Operation not found.");
+			}
+
+			write_operation(block, "obj_set_property", 3);
+			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+			block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+
 		}
 		else if (lex->next == tk_LET || lex->next == tk_REAL)
 		{
