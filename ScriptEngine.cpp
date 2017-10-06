@@ -964,6 +964,16 @@ value obj_register_property(script_machine * machine, int argc, value const * ar
 	return o;
 }
 
+value obj_get_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 2);
+
+	if (argv[0].get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot access property from non-object value.");
+
+	return argv[0].get_property(argv[1].as_string());
+}
+
 function const operations[] =
 {
 	{ "true", true_, 0 },
@@ -994,7 +1004,8 @@ function const operations[] =
 	{ "concatenate", concatenate, 2 },
 	{ "compare", compare, 2 },
 	{ "assert", assert_, 2 },
-	{ "obj_register_property", obj_register_property, 3 }
+	{ "obj_register_property", obj_register_property, 3 },
+	{ "obj_get_property", obj_get_property, 2 }
 };
 
 
@@ -1371,6 +1382,22 @@ void parser::parse_clause(script_engine::block * block)
 			throw parser_error("Expected token: \"}\"");
 
 		lex->advance();
+	}
+	else if (lex->next == tk_obj_id) {
+		symbol * s = search(lex->word);
+		if (s == NULL)
+			throw parser_error("Unknown object: " + lex->word);
+		block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+		lex->advance();
+
+		if(lex->next != tk_word)
+			throw parser_error("Expected property identifier.");
+		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+
+		write_operation(block, "obj_get_property", 2);
+
+		lex->advance();
+
 	}
 	else
 	{
