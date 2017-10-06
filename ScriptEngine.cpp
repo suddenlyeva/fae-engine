@@ -1395,14 +1395,19 @@ void parser::parse_clause(script_engine::block * block)
 		block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
 		lex->advance();
 
-		if(lex->next != tk_word)
+		if(lex->next != tk_word && lex->next != tk_obj_id)
 			throw parser_error("Expected property identifier.");
-		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
 
-		write_operation(block, "obj_get_property", 2);
+		while (lex->next == tk_word || lex->next == tk_obj_id) {
+			block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+			write_operation(block, "obj_get_property", 2);
+			if (lex->next == tk_word) {
+				break;
+			}
+			lex->advance();
+		}
 
 		lex->advance();
-
 	}
 	else
 	{
