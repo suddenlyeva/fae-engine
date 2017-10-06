@@ -971,7 +971,12 @@ value obj_get_property(script_machine * machine, int argc, value const * argv)
 	if (argv[0].get_type()->get_kind() != type_data::tk_object)
 		machine->raise_error("Cannot access property from non-object value.");
 
-	return argv[0].get_property(argv[1].as_string());
+	value result = argv[0].get_property(argv[1].as_string());
+
+	if (!result.has_data())
+		machine->raise_error("Property not found.");
+
+	return result;
 }
 
 function const operations[] =
@@ -1348,7 +1353,7 @@ void parser::parse_clause(script_engine::block * block)
 	}
 	else if (lex->next == tk_open_cur)
 	{
-		block->codes.push_back(code(lex->line, script_engine::pc_push_value, engine->get_object_type()));
+		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_object_type())));
 
 		lex->advance();
 

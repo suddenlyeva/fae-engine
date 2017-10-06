@@ -385,8 +385,11 @@ namespace gstd
 
 		const value get_property(const std::wstring & name) const
 		{
-			if (data->object_value != NULL)
-				return data->object_value->properties.at(name);
+			if (data->object_value != NULL) {
+				if (data->object_value->properties.count(name) != 0) {
+					return data->object_value->properties[name];
+				}
+			}
 
 			return value();
 		}
