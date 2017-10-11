@@ -77,7 +77,7 @@ const char * parser_error::what() const throw()
 
 enum token_kind
 {
-	tk_end, tk_invalid, tk_word, tk_obj_id, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
+	tk_end, tk_invalid, tk_word, tk_property, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
 	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_colon, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
 	tk_inc, tk_dec, tk_asterisk, tk_slash, tk_percent, tk_caret, tk_e, tk_g, tk_ge, tk_l, tk_le, tk_ne, tk_exclamation,
 	tk_ampersand, tk_and_then, tk_vertical, tk_or_else, tk_at, tk_add_assign, tk_subtract_assign, tk_multiply_assign,
@@ -349,6 +349,16 @@ void scanner::advance()
 			next = tk_range;
 			++current;
 		}
+		else if (std::isalpha(*current) || *current == '_')
+		{
+			next = tk_property;
+			word = "";
+			do
+			{
+				word += *current;
+				++current;
+			} while (std::isalpha(*current) || *current == '_' || std::isdigit(*current));
+		}
 		else
 		{
 			throw parser_error("単独のピリオドはこのスクリプトでは使いません");
@@ -443,11 +453,6 @@ void scanner::advance()
 				word += *current;
 				++current;
 			} while (std::isalpha(*current) || *current == '_' || std::isdigit(*current));
-
-			if (*current == '.') {
-				next = tk_obj_id;
-				++current;
-			}
 
 			if (word == "events")
 				next = tk_EVENTS;
@@ -637,6 +642,13 @@ value compare(script_machine * machine, int argc, value const * argv)
 			{
 				r = -1;	//"12" < "123"
 			}
+		}
+		break;
+
+		case type_data::tk_object:
+		{
+			//TODO
+			machine->raise_error("Object comparison not yet supported.");
 		}
 		break;
 
@@ -991,7 +1003,7 @@ value obj_set_property(script_machine * machine, int argc, value const * argv)
 	if (!o.set_property(argv[1].as_string(), argv[2]))
 		machine->raise_error("Type mismatch on property assignment.");
 
-	return o;
+	return value();
 }
 
 function const operations[] =
@@ -1337,6 +1349,34 @@ void parser::parse_clause(script_engine::block * block)
 		{
 			//変数
 			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
+			while (lex->next == tk_property) {
+				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+				write_operation(block, "obj_get_property", 2);
+				lex->advance();
+				// Duplicated code
+				// TODO: refactor
+				while (lex->next == tk_open_bra)
+				{
+					lex->advance();
+					parse_expression(block);
+
+					if (lex->next == tk_range)
+					{
+						lex->advance();
+						parse_expression(block);
+						write_operation(block, "slice", 3);
+					}
+					else
+					{
+						write_operation(block, "index", 2);
+					}
+
+					if (lex->next != tk_close_bra)
+						throw parser_error("\"]\" is required"); //\"]\"が必要です
+					lex->advance();
+				}
+			}
 		}
 	}
 	else if (lex->next == tk_open_bra)
@@ -1404,12 +1444,14 @@ void parser::parse_clause(script_engine::block * block)
 
 		lex->advance();
 	}
+	/*
 	else if (lex->next == tk_obj_id) {
 
 		symbol * s = search(lex->word);
 		if (s == NULL)
 			throw parser_error("Unknown object: " + lex->word);
 		block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
 		lex->advance();
 
 		if(lex->next != tk_word && lex->next != tk_obj_id)
@@ -1426,6 +1468,7 @@ void parser::parse_clause(script_engine::block * block)
 
 		lex->advance();
 	}
+	*/
 	else
 	{
 		throw parser_error("There is not a valid expression term"); //項として無効な式があります
@@ -1708,6 +1751,7 @@ void parser::parse_statements(script_engine::block * block)
 				block->codes.push_back(code(lex->line, script_engine::pc_call, s->sub, argc));
 			}
 		}
+		/*
 		else if (lex->next == tk_obj_id)
 		{
 			symbol * s = search(lex->word);
@@ -1727,6 +1771,9 @@ void parser::parse_statements(script_engine::block * block)
 				write_operation(block, "obj_get_property", 2);
 				lex->advance();
 			}
+
+			if (lex->next != tk_word)
+				throw parser_error("Expected property identifier.");
 
 			lex->advance();
 
@@ -1799,10 +1846,10 @@ void parser::parse_statements(script_engine::block * block)
 			}
 
 			write_operation(block, "obj_set_property", 3);
-			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-			block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+			block->codes.push_back(code(lex->line, script_engine::pc_pop));
 
 		}
+		*/
 		else if (lex->next == tk_LET || lex->next == tk_REAL)
 		{
 			lex->advance();
