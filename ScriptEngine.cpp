@@ -1350,33 +1350,6 @@ void parser::parse_clause(script_engine::block * block)
 			//変数
 			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
 
-			while (lex->next == tk_property) {
-				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
-				write_operation(block, "obj_get_property", 2);
-				lex->advance();
-				// Duplicated code
-				// TODO: refactor
-				while (lex->next == tk_open_bra)
-				{
-					lex->advance();
-					parse_expression(block);
-
-					if (lex->next == tk_range)
-					{
-						lex->advance();
-						parse_expression(block);
-						write_operation(block, "slice", 3);
-					}
-					else
-					{
-						write_operation(block, "index", 2);
-					}
-
-					if (lex->next != tk_close_bra)
-						throw parser_error("\"]\" is required"); //\"]\"が必要です
-					lex->advance();
-				}
-			}
 		}
 	}
 	else if (lex->next == tk_open_bra)
@@ -1486,25 +1459,37 @@ void parser::parse_suffix(script_engine::block * block)
 	}
 	else
 	{
-		while (lex->next == tk_open_bra)
+		while (lex->next == tk_open_bra || lex->next == tk_property)
 		{
-			lex->advance();
-			parse_expression(block);
 
-			if (lex->next == tk_range)
+			while (lex->next == tk_property) 
 			{
+				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+				write_operation(block, "obj_get_property", 2);
+				lex->advance();
+			}
+
+			while (lex->next == tk_open_bra)
+			{
+
 				lex->advance();
 				parse_expression(block);
-				write_operation(block, "slice", 3);
-			}
-			else
-			{
-				write_operation(block, "index", 2);
-			}
 
-			if (lex->next != tk_close_bra)
-				throw parser_error("\"]\" is required"); //\"]\"が必要です
-			lex->advance();
+				if (lex->next == tk_range)
+				{
+					lex->advance();
+					parse_expression(block);
+					write_operation(block, "slice", 3);
+				}
+				else
+				{
+					write_operation(block, "index", 2);
+				}
+
+				if (lex->next != tk_close_bra)
+					throw parser_error("\"]\" is required"); //\"]\"が必要です
+				lex->advance();
+			}
 		}
 	}
 }
