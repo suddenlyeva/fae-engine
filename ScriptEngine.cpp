@@ -1419,31 +1419,6 @@ void parser::parse_clause(script_engine::block * block)
 
 		lex->advance();
 	}
-	/*
-	else if (lex->next == tk_obj_id) {
-
-		symbol * s = search(lex->word);
-		if (s == NULL)
-			throw parser_error("Unknown object: " + lex->word);
-		block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-
-		lex->advance();
-
-		if(lex->next != tk_word && lex->next != tk_obj_id)
-			throw parser_error("Expected property identifier.");
-
-		while (lex->next == tk_word || lex->next == tk_obj_id) {
-			block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
-			write_operation(block, "obj_get_property", 2);
-			if (lex->next == tk_word) {
-				break;
-			}
-			lex->advance();
-		}
-
-		lex->advance();
-	}
-	*/
 	else
 	{
 		throw parser_error("There is not a valid expression term"); //項として無効な式があります
@@ -1637,144 +1612,7 @@ void parser::parse_statements(script_engine::block * block)
 	for (; ; )
 	{
 		bool need_semicolon = true;
-#if(0)
-		if (lex->next == tk_word)
-		{
-			symbol * s = search(lex->word);
-			if (s == NULL)
-				throw parser_error(lex->word + "は未定義の識別子です");
-			lex->advance();
 
-			/*
-			bool into_obj = lex->next == tk_property;
-
-			if (into_obj) {
-				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
-				lex->advance();
-				while (lex->next == tk_property)
-				{
-					write_operation(block, "obj_get_property", 2);
-					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
-					lex->advance();
-				}
-			}
-			*/
-			switch (lex->next)
-			{
-			case tk_assign:
-				lex->advance();
-				parse_expression(block);
-				/*
-				if (into_obj) {
-					write_operation(block, "obj_set_property", 3);
-				}
-				else {
-				*/
-					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
-				//}
-				break;
-
-			case tk_open_bra:
-				block->codes.push_back(code(lex->line, script_engine::pc_push_variable_writable, s->level, s->variable));
-				lex->advance();
-				parse_expression(block);
-				if (lex->next != tk_close_bra)
-					throw parser_error("\"]\" is required"); //\"]\"が必要です
-				lex->advance();
-				write_operation(block, "index!", 2);
-				if (lex->next != tk_assign)
-					throw parser_error("\"=\"が必要です"); //\"=\"が必要です
-				lex->advance();
-				parse_expression(block);
-				block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
-				break;
-
-			case tk_add_assign:
-			case tk_subtract_assign:
-			case tk_multiply_assign:
-			case tk_divide_assign:
-			case tk_remainder_assign:
-			case tk_power_assign:
-			case tk_concat_assign:
-			{
-				char const * f;
-				switch (lex->next)
-				{
-				case tk_add_assign:
-					f = "add";
-					break;
-				case tk_subtract_assign:
-					f = "subtract";
-					break;
-				case tk_multiply_assign:
-					f = "multiply";
-					break;
-				case tk_divide_assign:
-					f = "divide";
-					break;
-				case tk_remainder_assign:
-					f = "remainder";
-					break;
-				case tk_power_assign:
-					f = "power";
-					break;
-				case tk_concat_assign:
-					f = "concatenate";
-					break;
-				default:
-					throw parser_error("Mismatched token definition.");
-
-				}
-				lex->advance();
-
-				//if(!into_obj)
-					block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-
-				parse_expression(block);
-				write_operation(block, f, 2);
-				/*
-				if (into_obj) {
-					write_operation(block, "obj_set_property", 3);
-				}
-				else {*/
-					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
-				//}
-			}
-			break;
-
-			case tk_inc:
-			case tk_dec:
-			{
-				char const * f = (lex->next == tk_inc) ? "successor" : "predecessor";
-				lex->advance();
-
-				//if (!into_obj)
-					block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-				write_operation(block, f, 1);
-				/*
-				if (into_obj) {
-					write_operation(block, "obj_set_property", 3);
-				}
-				else {*/
-					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
-				//}
-			}
-			break;
-			default:
-				//関数, sub呼出し  //function sub call
-				if (s->sub == NULL)
-					throw parser_error("変数は関数やsubのようには呼べません");
-
-				int argc = parse_arguments(block);
-
-				if (argc != s->sub->arguments)
-					throw parser_error(s->sub->name + "wrong number of arguments"); //の引数の数が違います-translated
-
-				block->codes.push_back(code(lex->line, script_engine::pc_call, s->sub, argc));
-			}
-		}
-#endif
 		if (lex->next == tk_word || lex->next == tk_THIS)
 		{
 			symbol * s = search(lex->word);
@@ -1788,8 +1626,11 @@ void parser::parse_statements(script_engine::block * block)
 			bool as_obj = false;
 			bool as_array = false;
 
-			if (lex->next == tk_open_bra || lex->next == tk_property)
+			if (lex->next == tk_property)
 				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
+			if(lex->next == tk_open_bra)
+				block->codes.push_back(code(lex->line, script_engine::pc_push_variable_writable, s->level, s->variable));
 
 			while (lex->next == tk_open_bra || lex->next == tk_property)
 			{
