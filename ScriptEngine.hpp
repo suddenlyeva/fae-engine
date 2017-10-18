@@ -396,7 +396,7 @@ namespace gstd
 
 		bool set_property(const std::wstring & name, const value & val)
 		{
-			if (data->object_value != NULL) {
+			if (data->object_value != NULL && val.has_data()) {
 				if (data->object_value->properties.at(name).get_type() == val.get_type()) {
 					data->object_value->properties.at(name) = val;
 					return true;
