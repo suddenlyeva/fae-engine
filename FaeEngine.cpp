@@ -13,6 +13,14 @@ gstd::value func_print(gstd::script_machine* machine, int argc, gstd::value cons
 {
 	std::wstring wstr = argv[0].as_string();
 	std::string str = gstd::to_mbcs(wstr);
+	std::cout << str;
+	return gstd::value();
+}
+
+gstd::value func_println(gstd::script_machine* machine, int argc, gstd::value const * argv)
+{
+	std::wstring wstr = argv[0].as_string();
+	std::string str = gstd::to_mbcs(wstr);
 	std::cout << str << std::endl;
 	return gstd::value();
 }
@@ -42,6 +50,7 @@ gstd::value func_to_string(gstd::script_machine* machine, int argc, gstd::value 
 gstd::function const sampleScriptFunction[] =  
 {
 	{"print", func_print, 1},
+	{"println", func_println, 1 },
 	{"min", func_min, 2},
 	{"max", func_max, 2},
 	{"toString", func_to_string, 1},
