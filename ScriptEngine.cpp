@@ -77,12 +77,12 @@ const char * parser_error::what() const throw()
 
 enum token_kind
 {
-	tk_end, tk_invalid, tk_word, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
-	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
+	tk_end, tk_invalid, tk_word, tk_property, tk_real, tk_char, tk_string, tk_open_par, tk_close_par, tk_open_bra, tk_close_bra,
+	tk_open_cur, tk_close_cur, tk_open_abs, tk_close_abs, tk_comma, tk_colon, tk_semicolon, tk_arrow, tk_tilde, tk_assign, tk_plus, tk_minus,
 	tk_inc, tk_dec, tk_asterisk, tk_slash, tk_percent, tk_caret, tk_e, tk_g, tk_ge, tk_l, tk_le, tk_ne, tk_exclamation,
 	tk_ampersand, tk_and_then, tk_vertical, tk_or_else, tk_at, tk_add_assign, tk_subtract_assign, tk_multiply_assign,
 	tk_divide_assign, tk_remainder_assign, tk_power_assign, tk_concat_assign, tk_range, tk_EVENTS, tk_FOR, tk_BREAK, tk_ON, tk_REVERSE,
-	tk_ELSE, tk_FUNCTION, tk_IF, tk_IN, tk_LET, tk_LOCAL, tk_LOOP, tk_REAL, tk_RETURN, tk_SUB, tk_TASK,
+	tk_ELSE, tk_FUNCTION, tk_IF, tk_IN, tk_LET, tk_LOCAL, tk_LOOP, tk_REAL, tk_RETURN, tk_SUB, tk_TASK, tk_THIS,
 	tk_TIMES, tk_WHILE, tk_YIELD, tk_EXIT
 };
 
@@ -195,6 +195,10 @@ void scanner::advance()
 		break;
 	case ',':
 		next = tk_comma;
+		++current;
+		break;
+	case ':':
+		next = tk_colon;
 		++current;
 		break;
 	case ';':
@@ -345,6 +349,16 @@ void scanner::advance()
 			next = tk_range;
 			++current;
 		}
+		else if (std::isalpha(*current) || *current == '_')
+		{
+			next = tk_property;
+			word = "";
+			do
+			{
+				word += *current;
+				++current;
+			} while (std::isalpha(*current) || *current == '_' || std::isdigit(*current));
+		}
 		else
 		{
 			throw parser_error("単独のピリオドはこのスクリプトでは使いません");
@@ -472,6 +486,8 @@ void scanner::advance()
 				next = tk_SUB;
 			else if (word == "task")
 				next = tk_TASK;
+			else if (word == "this")
+				next = tk_THIS;
 			else if (word == "times")
 				next = tk_TIMES;
 			else if (word == "while")
@@ -628,6 +644,13 @@ value compare(script_machine * machine, int argc, value const * argv)
 			{
 				r = -1;	//"12" < "123"
 			}
+		}
+		break;
+
+		case type_data::tk_object:
+		{
+			//TODO
+			machine->raise_error("Object comparison not yet supported.");
 		}
 		break;
 
@@ -942,6 +965,49 @@ value assert_(script_machine * machine, int argc, value const * argv)
 	return value();
 }
 
+value obj_register_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 3);
+
+	value o = argv[2];
+	if (o.get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot register property to non-object value.");
+	if (!o.register_property(argv[0].as_string(), argv[1]))
+		machine->raise_error("A property already exists with this name.");
+
+	return o;
+}
+
+value obj_get_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 2);
+
+	if (argv[0].get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot access property from non-object value.");
+
+	value result = argv[0].get_property(argv[1].as_string());
+
+	if (!result.has_data())
+		machine->raise_error("Property not found.");
+
+	return result;
+}
+
+value obj_set_property(script_machine * machine, int argc, value const * argv)
+{
+	assert(argc == 3);
+
+	value o = argv[0];
+
+	if (o.get_type()->get_kind() != type_data::tk_object)
+		machine->raise_error("Cannot set property for non-object value.");
+
+	if (!o.set_property(argv[2].as_string(), argv[1]))
+		machine->raise_error("Type mismatch on property assignment.");
+
+	return value();
+}
+
 function const operations[] =
 {
 	{ "true", true_, 0 },
@@ -971,7 +1037,10 @@ function const operations[] =
 	{ "append", append, 2 },
 	{ "concatenate", concatenate, 2 },
 	{ "compare", compare, 2 },
-	{ "assert", assert_, 2 }
+	{ "assert", assert_, 2 },
+	{ "obj_register_property", obj_register_property, 3 },
+	{ "obj_get_property", obj_get_property, 2 },
+	{ "obj_set_property", obj_set_property, 3 }
 };
 
 
@@ -1282,6 +1351,7 @@ void parser::parse_clause(script_engine::block * block)
 		{
 			//変数
 			block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
 		}
 	}
 	else if (lex->next == tk_open_bra)
@@ -1312,6 +1382,43 @@ void parser::parse_clause(script_engine::block * block)
 	{
 		parse_parentheses(block);
 	}
+	else if (lex->next == tk_open_cur)
+	{
+		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_object_type())));
+
+		lex->advance();
+
+		while (lex->next != tk_close_cur) {
+
+			if (lex->next != tk_word)
+				throw parser_error("Expected property identifier.");
+			block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+			block->codes.push_back(code(lex->line, script_engine::pc_swap));
+			lex->advance();
+
+			if (lex->next != tk_colon)
+				throw parser_error("Expected token: \":\"");
+			lex->advance();
+
+			parse_expression(block);
+			block->codes.push_back(code(lex->line, script_engine::pc_swap));
+
+			write_operation(block, "obj_register_property", 3);
+
+			if (lex->next != tk_comma) {
+				break;
+			}
+
+			lex->advance();
+			if (lex->next != tk_word)
+				throw parser_error("Expected property identifier.");
+		}
+
+		if (lex->next != tk_close_cur)
+			throw parser_error("Expected token: \"}\"");
+
+		lex->advance();
+	}
 	else
 	{
 		throw parser_error("There is not a valid expression term"); //項として無効な式があります
@@ -1329,25 +1436,37 @@ void parser::parse_suffix(script_engine::block * block)
 	}
 	else
 	{
-		while (lex->next == tk_open_bra)
+		while (lex->next == tk_open_bra || lex->next == tk_property)
 		{
-			lex->advance();
-			parse_expression(block);
 
-			if (lex->next == tk_range)
+			while (lex->next == tk_property) 
 			{
+				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+				write_operation(block, "obj_get_property", 2);
+				lex->advance();
+			}
+
+			while (lex->next == tk_open_bra)
+			{
+
 				lex->advance();
 				parse_expression(block);
-				write_operation(block, "slice", 3);
-			}
-			else
-			{
-				write_operation(block, "index", 2);
-			}
 
-			if (lex->next != tk_close_bra)
-				throw parser_error("\"]\" is required"); //\"]\"が必要です
-			lex->advance();
+				if (lex->next == tk_range)
+				{
+					lex->advance();
+					parse_expression(block);
+					write_operation(block, "slice", 3);
+				}
+				else
+				{
+					write_operation(block, "index", 2);
+				}
+
+				if (lex->next != tk_close_bra)
+					throw parser_error("\"]\" is required"); //\"]\"が必要です
+				lex->advance();
+			}
 		}
 	}
 }
@@ -1494,33 +1613,85 @@ void parser::parse_statements(script_engine::block * block)
 	{
 		bool need_semicolon = true;
 
-		if (lex->next == tk_word)
+		if (lex->next == tk_word || lex->next == tk_THIS)
 		{
 			symbol * s = search(lex->word);
 			if (s == NULL)
-				throw parser_error(lex->word + "は未定義の識別子です");
+				throw parser_error(lex->next == tk_THIS ? "Use of \"this\" requires a function caller."
+														: ("Identifier not found: " + lex->word));
+
 			lex->advance();
+
+			std::string prop;
+			bool as_obj = false;
+			bool as_array = false;
+
+			if (lex->next == tk_property)
+				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
+			if(lex->next == tk_open_bra)
+				block->codes.push_back(code(lex->line, script_engine::pc_push_variable_writable, s->level, s->variable));
+
+			while (lex->next == tk_open_bra || lex->next == tk_property)
+			{
+				while (lex->next == tk_open_bra)
+				{
+					lex->advance();
+					parse_expression(block);
+
+					if (lex->next != tk_close_bra)
+						throw parser_error("Expected token: \"]\"");
+					lex->advance();
+
+					if (lex->next != tk_open_bra && lex->next != tk_property)
+					{
+						write_operation(block, "index!", 2);
+						as_array = true;
+					}
+					else {
+						write_operation(block, "index", 2);
+					}
+					// Check next
+					// If it's not a property or array index, it must be an array overwrite.
+					// Otherwise we need to evaluate it first then try again.
+					// We'll need a function to prepare a pushed value this way to be indexed as an array.
+				}
+
+				while (lex->next == tk_property)
+				{
+					prop = lex->word;
+					lex->advance();
+					if (lex->next == tk_property || lex->next == tk_open_bra)
+					{
+						block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+						write_operation(block, "obj_get_property", 2);
+						prop = "";
+					}
+					// If the trailing end is a property, there are two possibilities.
+					// Either it is the variable we are writing, or it is a method we are calling.
+					// We can search for the function first, then if it is not found we can try to
+					// write to the variable.
+				}
+			}
+
+			if (!prop.empty())
+				as_obj = true;
+
 			switch (lex->next)
 			{
 			case tk_assign:
 				lex->advance();
 				parse_expression(block);
-				block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
-				break;
-
-			case tk_open_bra:
-				block->codes.push_back(code(lex->line, script_engine::pc_push_variable_writable, s->level, s->variable));
-				lex->advance();
-				parse_expression(block);
-				if (lex->next != tk_close_bra)
-					throw parser_error("\"]\" is required"); //\"]\"が必要です
-				lex->advance();
-				write_operation(block, "index!", 2);
-				if (lex->next != tk_assign)
-					throw parser_error("\"=\"が必要です"); //\"=\"が必要です
-				lex->advance();
-				parse_expression(block);
-				block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+				if (as_obj) {
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+					write_operation(block, "obj_set_property", 3);
+				}
+				else if (as_array) {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+				}
+				else {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+				}
 				break;
 
 			case tk_add_assign:
@@ -1561,12 +1732,20 @@ void parser::parse_statements(script_engine::block * block)
 				}
 				lex->advance();
 
-				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-
 				parse_expression(block);
 				write_operation(block, f, 2);
 
-				block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+				if (as_obj) {
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+					write_operation(block, "obj_set_property", 3);
+				}
+				else if (as_array) {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+				}
+				else {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+				}
+
 			}
 			break;
 
@@ -1576,12 +1755,29 @@ void parser::parse_statements(script_engine::block * block)
 				char const * f = (lex->next == tk_inc) ? "successor" : "predecessor";
 				lex->advance();
 
-				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+				if(!as_obj && !as_array)
+					block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+
 				write_operation(block, f, 1);
-				block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+
+				if (as_obj) {
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+					write_operation(block, "obj_set_property", 3);
+				}
+				else if (as_array) {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+				}
+				else {
+					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
+				}
+
 			}
 			break;
 			default:
+
+				if(as_obj)
+					throw parser_error("Missing expression!");
+
 				//関数, sub呼出し  //function sub call
 				if (s->sub == NULL)
 					throw parser_error("変数は関数やsubのようには呼べません");

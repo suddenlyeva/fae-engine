@@ -9,6 +9,7 @@
 #include<list>
 #include<string>
 #include<map>
+#include<unordered_map>
 
 //重複宣言チェックをしない
 //#define __SCRIPT_H__NO_CHECK_DUPLICATED
@@ -190,7 +191,7 @@ namespace gstd
 	public:
 		enum type_kind
 		{
-			tk_real, tk_char, tk_boolean, tk_array
+			tk_real, tk_char, tk_boolean, tk_array, tk_object
 		};
 
 		type_data(type_kind k, type_data * t = NULL) : kind(k), element(t)
@@ -221,11 +222,18 @@ namespace gstd
 	class value
 	{
 	private:
+
+		struct object {
+			int ref_count;
+			std::unordered_map<std::wstring, value> properties;
+		};
+
 		struct body
 		{
 			int ref_count;
 			type_data * type;
 			lightweight_vector<value> array_value;
+			object * object_value = NULL;
 
 			union
 			{
@@ -241,6 +249,20 @@ namespace gstd
 	public:
 		value() : data(NULL)
 		{
+		}
+
+		value(type_data * t)
+		{
+			if (t->get_kind() == t->tk_object) {
+				data = new body();
+				data->ref_count = 1;
+				data->type = t;
+				data->object_value = new object();
+				data->object_value->ref_count = 1;
+			}
+			else {
+				data = NULL;
+			}
 		}
 
 		value(type_data * t, long double v)
@@ -276,17 +298,34 @@ namespace gstd
 				data->array_value.push_back(value(t->get_element(), v[i]));
 		}
 
+		value(type_data * t, object * o)
+		{
+				data = new body();
+				data->ref_count = 1;
+				data->type = t;
+				data->object_value = o;
+				data->object_value->ref_count++;
+		}
+
 		value(value const & source)
 		{
 			data = source.data;
-			if (data != NULL)
+			if (data != NULL) {
 				++(data->ref_count);
+				if (data->object_value != NULL)
+					++(data->object_value->ref_count);
+			}
 		}
 
 		~value()
 		{
 			if (data != NULL)
 			{
+				if (data->object_value != NULL) {
+					--(data->object_value->ref_count);
+					if (data->object_value->ref_count == 0)
+						delete data->object_value;
+				}
 				--(data->ref_count);
 				if (data->ref_count == 0)
 					delete data;
@@ -298,9 +337,17 @@ namespace gstd
 			if (source.data != NULL)
 			{
 				++(source.data->ref_count);
+				if (source.data->object_value != NULL)
+					++(source.data->object_value->ref_count);
+
 			}
 			if (data != NULL)
 			{
+				if (data->object_value != NULL) {
+					--(data->object_value->ref_count);
+					if (data->object_value->ref_count == 0)
+						delete data->object_value;
+				}
 				--(data->ref_count);
 				if (data->ref_count == 0)
 					delete data;
@@ -326,6 +373,37 @@ namespace gstd
 			unique();
 			data->type = t;
 			data->boolean_value = v;
+		}
+
+		bool register_property(const std::wstring & name, const value & val)
+		{
+			if (data->object_value != NULL)
+				return std::get<1>(data->object_value->properties.try_emplace(name, val));
+
+			return false;
+		}
+
+		const value get_property(const std::wstring & name) const
+		{
+			if (data->object_value != NULL) {
+				if (data->object_value->properties.count(name) != 0) {
+					return data->object_value->properties[name];
+				}
+			}
+
+			return value();
+		}
+
+		bool set_property(const std::wstring & name, const value & val)
+		{
+			if (data->object_value != NULL && val.has_data()) {
+				if (data->object_value->properties.at(name).get_type() == val.get_type()) {
+					data->object_value->properties.at(name) = val;
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		void append(type_data * t, value const & x)
@@ -470,6 +548,11 @@ namespace gstd
 						return result;
 					}
 				}
+				case type_data::tk_object:
+				{
+					// TODO
+					return L"Object";
+				}
 				default:
 					return L"(INTERNAL-ERROR)";
 				}
@@ -539,6 +622,7 @@ namespace gstd
 		type_data * char_type;
 		type_data * boolean_type;
 		type_data * string_type;
+		type_data * object_type;
 	public:
 		script_type_manager()
 		{
@@ -546,6 +630,7 @@ namespace gstd
 			char_type = &* types.insert(types.end(), type_data(type_data::tk_char));
 			boolean_type = &* types.insert(types.end(), type_data(type_data::tk_boolean));
 			string_type = &* types.insert(types.end(), type_data(type_data::tk_array, char_type));
+			object_type = &* types.insert(types.end(), type_data(type_data::tk_object));
 		}
 
 		type_data * get_real_type()
@@ -578,6 +663,11 @@ namespace gstd
 				}
 			}
 			return &* types.insert(types.end(), type_data(type_data::tk_array, element));
+		}
+
+		type_data * get_object_type()
+		{
+			return object_type;
 		}
 
 	};
@@ -728,6 +818,11 @@ namespace gstd
 		type_data * get_string_type()
 		{
 			return type_manager->get_string_type();
+		}
+
+		type_data * get_object_type()
+		{
+			return type_manager->get_object_type();
 		}
 
 		void * data;	// space for the client //クライアント用空間 //not really needed. DirectX perhaps? 
