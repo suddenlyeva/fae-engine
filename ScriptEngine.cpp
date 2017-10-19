@@ -1732,6 +1732,12 @@ void parser::parse_statements(script_engine::block * block)
 				}
 				lex->advance();
 
+				if (as_obj) {
+					block->codes.push_back(code(lex->line, script_engine::pc_dup));
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+					write_operation(block, "obj_get_property", 2);
+				}
+
 				parse_expression(block);
 				write_operation(block, f, 2);
 
@@ -1755,8 +1761,14 @@ void parser::parse_statements(script_engine::block * block)
 				char const * f = (lex->next == tk_inc) ? "successor" : "predecessor";
 				lex->advance();
 
-				if(!as_obj && !as_array)
+				if (!as_obj && !as_array) {
 					block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+				}
+				else if (as_obj) {
+					block->codes.push_back(code(lex->line, script_engine::pc_dup));
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
+					write_operation(block, "obj_get_property", 2);
+				}
 
 				write_operation(block, f, 1);
 
@@ -2356,8 +2368,6 @@ void script_machine::advance()
 				threads.erase(threads.begin() + current_thread_index);
 				yield();
 			}
-
-			assert(removing->stack.length == 0);
 
 			for (;;)
 			{
