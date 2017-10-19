@@ -509,6 +509,7 @@ void scanner::advance()
 value add(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 2);
+
 	if (argv[0].get_type()->get_kind() == type_data::tk_array)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
@@ -1738,6 +1739,9 @@ void parser::parse_statements(script_engine::block * block)
 					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
 					write_operation(block, "obj_get_property", 2);
 				}
+				else if (as_array) {
+					block->codes.push_back(code(lex->line, script_engine::pc_dup));
+				}
 
 				parse_expression(block);
 				write_operation(block, f, 2);
@@ -1748,8 +1752,7 @@ void parser::parse_statements(script_engine::block * block)
 					block->codes.push_back(code(lex->line, script_engine::pc_pop));
 				}
 				else if (as_array) {
-					// TODO: Does not work.
-					// block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
 				}
 				else {
 					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
@@ -1772,6 +1775,9 @@ void parser::parse_statements(script_engine::block * block)
 					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(prop))));
 					write_operation(block, "obj_get_property", 2);
 				}
+				else if (as_array) {
+					block->codes.push_back(code(lex->line, script_engine::pc_dup));
+				}
 
 				write_operation(block, f, 1);
 
@@ -1781,8 +1787,7 @@ void parser::parse_statements(script_engine::block * block)
 					block->codes.push_back(code(lex->line, script_engine::pc_pop));
 				}
 				else if (as_array) {
-					// TODO: Does not work.
-					// block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
 				}
 				else {
 					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
