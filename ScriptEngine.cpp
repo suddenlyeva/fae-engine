@@ -1746,7 +1746,8 @@ void parser::parse_statements(script_engine::block * block)
 					write_operation(block, "obj_set_property", 3);
 				}
 				else if (as_array) {
-					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+					// TODO: Does not work.
+					// block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
 				}
 				else {
 					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
@@ -1777,7 +1778,8 @@ void parser::parse_statements(script_engine::block * block)
 					write_operation(block, "obj_set_property", 3);
 				}
 				else if (as_array) {
-					block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
+					// TODO: Does not work.
+					// block->codes.push_back(code(lex->line, script_engine::pc_assign_writable));
 				}
 				else {
 					block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
@@ -2368,6 +2370,8 @@ void script_machine::advance()
 				threads.erase(threads.begin() + current_thread_index);
 				yield();
 			}
+
+			assert(current->stack.length == 0);
 
 			for (;;)
 			{
