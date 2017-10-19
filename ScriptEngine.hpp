@@ -298,22 +298,11 @@ namespace gstd
 				data->array_value.push_back(value(t->get_element(), v[i]));
 		}
 
-		value(type_data * t, object * o)
-		{
-				data = new body();
-				data->ref_count = 1;
-				data->type = t;
-				data->object_value = o;
-				data->object_value->ref_count++;
-		}
-
 		value(value const & source)
 		{
 			data = source.data;
 			if (data != NULL) {
 				++(data->ref_count);
-				if (data->object_value != NULL)
-					++(data->object_value->ref_count);
 			}
 		}
 
@@ -321,15 +310,12 @@ namespace gstd
 		{
 			if (data != NULL)
 			{
-				/*
-				if (data->object_value != NULL) {
-					--(data->object_value->ref_count);
-					if (data->object_value->ref_count == 0)
-						delete data->object_value;
-				}*/
 				--(data->ref_count);
-				if (data->ref_count == 0)
+				if (data->ref_count == 0) {
+					if (data->object_value != NULL)
+						delete data->object_value;
 					delete data;
+				}
 			}
 		}
 
@@ -338,20 +324,15 @@ namespace gstd
 			if (source.data != NULL)
 			{
 				++(source.data->ref_count);
-				if (source.data->object_value != NULL)
-					++(source.data->object_value->ref_count);
-
 			}
 			if (data != NULL)
 			{
-				if (data->object_value != NULL) {
-					--(data->object_value->ref_count);
-					if (data->object_value->ref_count == 0)
-						delete data->object_value;
-				}
 				--(data->ref_count);
-				if (data->ref_count == 0)
+				if (data->ref_count == 0) {
+					if (data->object_value != NULL)
+						delete data->object_value;
 					delete data;
+				}
 			}
 			data = source.data;
 			return *this;
@@ -378,6 +359,7 @@ namespace gstd
 
 		bool register_property(const std::wstring & name, const value & val)
 		{
+			unique();
 			if (data->object_value != NULL)
 				return std::get<1>(data->object_value->properties.try_emplace(name, val));
 
@@ -590,6 +572,9 @@ namespace gstd
 				--(data->ref_count);
 				data = new body(*data);
 				data->ref_count = 1;
+				if (data->object_value != NULL) {
+					data->object_value = new object(*data->object_value);
+				}
 			}
 		}
 
