@@ -154,7 +154,7 @@ void RunSample(char* scriptName)
 
 	//--------------------------------
 	//call @Console
-	if (machine.has_event("Console")) {
+	if (machine.has_event("Console") && !machine.get_stopped()) {
 		std::string input;
 		do {
 			machine.call("Console");
