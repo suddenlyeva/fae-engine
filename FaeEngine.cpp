@@ -25,6 +25,12 @@ gstd::value func_println(gstd::script_machine* machine, int argc, gstd::value co
 	return gstd::value();
 }
 
+gstd::value func_clear(gstd::script_machine* machine, int argc, gstd::value const * argv)
+{
+	std::system("CLS");
+	return gstd::value();
+}
+
 gstd::value func_min(gstd::script_machine* machine, int argc, gstd::value const * argv)
 {
 	long double v1 = argv[0].as_real();
@@ -49,6 +55,7 @@ gstd::value func_to_string(gstd::script_machine* machine, int argc, gstd::value 
 
 gstd::function const sampleScriptFunction[] =  
 {
+	{"clear", func_clear, 0 },
 	{"print", func_print, 1},
 	{"println", func_println, 1 },
 	{"min", func_min, 2},
@@ -146,13 +153,22 @@ void RunSample(char* scriptName)
 	}
 
 	//--------------------------------
-	//call @Main
-	while(!machine.get_stopped())
-	{
-		if (machine.has_event("Main")) {
-			machine.call("Main");
+	//call @Console
+	if (machine.has_event("Console")) {
+		std::string input;
+		do {
+			machine.call("Console");
 			ErrorHandle::CheckMachineError(machine);
+		} while (!machine.get_stopped() && std::getline(std::cin, input));
+	}
+
+	//--------------------------------
+	//call @Ticker
+	if (machine.has_event("Ticker")) {
+		while(!machine.get_stopped()) {
+				machine.call("Ticker");
+				ErrorHandle::CheckMachineError(machine);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000/60));
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(1000/60));
 	}
 }
