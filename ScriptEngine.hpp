@@ -321,11 +321,12 @@ namespace gstd
 		{
 			if (data != NULL)
 			{
+				/*
 				if (data->object_value != NULL) {
 					--(data->object_value->ref_count);
 					if (data->object_value->ref_count == 0)
 						delete data->object_value;
-				}
+				}*/
 				--(data->ref_count);
 				if (data->ref_count == 0)
 					delete data;
