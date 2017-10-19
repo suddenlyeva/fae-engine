@@ -1742,6 +1742,9 @@ void parser::parse_statements(script_engine::block * block)
 				else if (as_array) {
 					block->codes.push_back(code(lex->line, script_engine::pc_dup));
 				}
+				else {
+					block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
+				}
 
 				parse_expression(block);
 				write_operation(block, f, 2);
