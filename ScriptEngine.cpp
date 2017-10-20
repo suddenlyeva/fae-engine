@@ -510,7 +510,8 @@ value add(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 2);
 
-	if (argv[0].get_type()->get_kind() == type_data::tk_array)
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
@@ -539,7 +540,8 @@ value add(script_machine * machine, int argc, value const * argv)
 value subtract(script_machine * machine, int argc, value const * argv)
 {
 	assert(argc == 2);
-	if (argv[0].get_type()->get_kind() == type_data::tk_array)
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
@@ -567,11 +569,59 @@ value subtract(script_machine * machine, int argc, value const * argv)
 
 value multiply(script_machine * machine, int argc, value const * argv)
 {
-	return value(machine->get_engine()->get_real_type(), argv[0].as_real() * argv[1].as_real());
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
+	{
+		if (argv[0].get_type() != argv[1].get_type())
+		{
+			machine->raise_error("Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		if (argv[0].length_as_array() != argv[1].length_as_array())
+		{
+			machine->raise_error("’·‚³‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		value result;
+		for (unsigned i = 0; i < argv[1].length_as_array(); ++i)
+		{
+			value v[2];
+			v[0] = argv[0].index_as_array(i);
+			v[1] = argv[1].index_as_array(i);
+			result.append(argv[1].get_type(), multiply(machine, 2, v));
+		}
+		return result;
+	}
+	else
+		return value(machine->get_engine()->get_real_type(), argv[0].as_real() * argv[1].as_real());
 }
 
 value divide(script_machine * machine, int argc, value const * argv)
 {
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
+	{
+		if (argv[0].get_type() != argv[1].get_type())
+		{
+			machine->raise_error("Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		if (argv[0].length_as_array() != argv[1].length_as_array())
+		{
+			machine->raise_error("’·‚³‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		value result;
+		for (unsigned i = 0; i < argv[1].length_as_array(); ++i)
+		{
+			value v[2];
+			v[0] = argv[0].index_as_array(i);
+			v[1] = argv[1].index_as_array(i);
+			result.append(argv[1].get_type(), divide(machine, 2, v));
+		}
+		return result;
+	}
+	else
 	return value(machine->get_engine()->get_real_type(), argv[0].as_real() / argv[1].as_real());
 }
 
@@ -584,6 +634,16 @@ value remainder(script_machine * machine, int argc, value const * argv)
 
 value negative(script_machine * machine, int argc, value const * argv)
 {
+	if (argv[0].get_type()->get_kind() == type_data::tk_array)
+	{
+		value result;
+		for (unsigned i = 0; i < argv[0].length_as_array(); ++i)
+		{
+			value v = argv[0].index_as_array(i);
+			result.append(argv[0].get_type(), negative(machine, 1, &v));
+		}
+		return result;
+	}
 	return value(machine->get_engine()->get_real_type(), -argv[0].as_real());
 }
 
