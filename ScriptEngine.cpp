@@ -1325,7 +1325,6 @@ void parser::parse_clause(script_engine::block * block)
 			str += (lex->next == tk_string) ? lex->string_value : (std::wstring() + lex->char_value);
 			lex->advance();
 		}
-
 		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), str)));
 	}
 	else if (lex->next == tk_word)
@@ -2419,10 +2418,13 @@ void script_machine::advance()
 					}
 					value * dest = &(vars->at[c->variable]);
 					value * src = &stack->at[stack->length - 1];
+
 					if (dest->has_data() && dest->get_type() != src->get_type()
 						&& !(dest->get_type()->get_kind() == type_data::tk_array
 							&& src->get_type()->get_kind() == type_data::tk_array
-							&& (dest->length_as_array() == 0 || src->length_as_array() == 0)))
+							&& (dest->length_as_array() == 0 || src->length_as_array() == 0)
+							&& dest->get_type()->get_element()->get_kind() != type_data::tk_char
+							&& src->get_type()->get_element()->get_kind() == type_data::tk_char))
 						raise_error("‘ã“ü‚É‚æ‚Á‚ÄŒ^‚ª•Ï‚¦‚ç‚ê‚æ‚¤‚Æ‚µ‚Ü‚µ‚½"); //type was changed by the assignment
 					*dest = *src;
 					stack->pop_back();
@@ -2439,8 +2441,11 @@ void script_machine::advance()
 			value * dest = &stack->at[stack->length - 2];
 			value * src = &stack->at[stack->length - 1];
 			if (dest->has_data() && dest->get_type() != src->get_type()
-				&& !(dest->get_type()->get_kind() == type_data::tk_array && src->get_type()->get_kind() == type_data::tk_array
-					&& (dest->length_as_array() == 0 || src->length_as_array() == 0)))
+				&& !(dest->get_type()->get_kind() == type_data::tk_array 
+					&& src->get_type()->get_kind() == type_data::tk_array
+					&& (dest->length_as_array() == 0 || src->length_as_array() == 0)
+					&& dest->get_type()->get_element()->get_kind() != type_data::tk_char
+					&& src->get_type()->get_element()->get_kind() == type_data::tk_char))
 				raise_error("‘ã“ü‚É‚æ‚Á‚ÄŒ^‚ª•Ï‚¦‚ç‚ê‚æ‚¤‚Æ‚µ‚Ü‚µ‚½");	//type was changed by the assignment
 			else
 			{
