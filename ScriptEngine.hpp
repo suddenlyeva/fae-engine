@@ -511,6 +511,7 @@ namespace gstd
 
 				case type_data::tk_array:
 				{
+
 					if (data->type->get_element()->get_kind() == type_data::tk_char)
 					{
 						std::wstring result;
@@ -547,10 +548,16 @@ namespace gstd
 		}
 		value const & index_as_array(unsigned i) const
 		{
+			if (data != NULL) {
+				++(data->ref_count);
+			}
 			return data->array_value[i];
 		}
 		value & index_as_array(unsigned i)
 		{
+			if (data != NULL) {
+				++(data->ref_count);
+			}
 			return data->array_value[i];
 		}
 		type_data * get_type() const
