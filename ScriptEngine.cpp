@@ -1305,6 +1305,18 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 				}
 			}
 			break;
+			case tk_THIS:
+				if ((*current_frame).find("this") == (*current_frame).end())
+				{
+					symbol s;
+					s.level = level;
+					s.sub = NULL;
+					s.variable = var;
+					++var;
+					(*current_frame)["this"] = s;
+				}
+				lex2.advance();
+			break;
 			case tk_REAL:
 			case tk_LET:
 				lex2.advance();
@@ -1387,7 +1399,7 @@ void parser::parse_clause(script_engine::block * block)
 		}
 		block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), str)));
 	}
-	else if (lex->next == tk_word)
+	else if (lex->next == tk_word || lex->next == tk_THIS)
 	{
 		symbol * s = search(lex->word);
 		if (s == NULL)
@@ -1677,8 +1689,9 @@ void parser::parse_statements(script_engine::block * block)
 		{
 			symbol * s = search(lex->word);
 			if (s == NULL)
-				throw parser_error(lex->next == tk_THIS ? "Use of \"this\" requires a function caller."
-														: ("Identifier not found: " + lex->word));
+				throw parser_error("Identifier not found: " + lex->word);
+
+			bool with_this = lex->next == tk_THIS;
 
 			lex->advance();
 
@@ -1686,11 +1699,15 @@ void parser::parse_statements(script_engine::block * block)
 			bool as_obj = false;
 			bool as_array = false;
 
-			if (lex->next == tk_property)
+			if (lex->next == tk_property) {
 				block->codes.push_back(code(lex->line, script_engine::pc_push_variable, s->level, s->variable));
-
-			if(lex->next == tk_open_bra)
+			}
+			else if(lex->next == tk_open_bra) {
 				block->codes.push_back(code(lex->line, script_engine::pc_push_variable_writable, s->level, s->variable));
+			}
+			else if (with_this) {
+				throw parser_error("Direct assignment to \"this\" is not allowed.");
+			}
 
 			while (lex->next == tk_open_bra || lex->next == tk_property)
 			{
