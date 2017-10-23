@@ -622,14 +622,36 @@ value divide(script_machine * machine, int argc, value const * argv)
 		return result;
 	}
 	else
-	return value(machine->get_engine()->get_real_type(), argv[0].as_real() / argv[1].as_real());
+		return value(machine->get_engine()->get_real_type(), argv[0].as_real() / argv[1].as_real());
 }
 
 value remainder(script_machine * machine, int argc, value const * argv)
 {
-	long double x = argv[0].as_real();
-	long double y = argv[1].as_real();
-	return value(machine->get_engine()->get_real_type(), std::fmodl(x, y));
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
+	{
+		if (argv[0].get_type() != argv[1].get_type())
+		{
+			machine->raise_error("Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		if (argv[0].length_as_array() != argv[1].length_as_array())
+		{
+			machine->raise_error("’·‚³‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		value result;
+		for (unsigned i = 0; i < argv[1].length_as_array(); ++i)
+		{
+			value v[2];
+			v[0] = argv[0].index_as_array(i);
+			v[1] = argv[1].index_as_array(i);
+			result.append(argv[1].get_type(), remainder(machine, 2, v));
+		}
+		return result;
+	}
+	else
+		return value(machine->get_engine()->get_real_type(), std::fmodl(argv[0].as_real(), argv[1].as_real()));
 }
 
 value negative(script_machine * machine, int argc, value const * argv)
@@ -649,6 +671,30 @@ value negative(script_machine * machine, int argc, value const * argv)
 
 value power(script_machine * machine, int argc, value const * argv)
 {
+	if (argv[0].get_type()->get_kind() == type_data::tk_array
+	||  argv[1].get_type()->get_kind() == type_data::tk_array)
+	{
+		if (argv[0].get_type() != argv[1].get_type())
+		{
+			machine->raise_error("Œ^‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		if (argv[0].length_as_array() != argv[1].length_as_array())
+		{
+			machine->raise_error("’·‚³‚ªˆê’v‚µ‚Ü‚¹‚ñ");
+			return value();
+		}
+		value result;
+		for (unsigned i = 0; i < argv[1].length_as_array(); ++i)
+		{
+			value v[2];
+			v[0] = argv[0].index_as_array(i);
+			v[1] = argv[1].index_as_array(i);
+			result.append(argv[1].get_type(), power(machine, 2, v));
+		}
+		return result;
+	}
+	else
 	return value(machine->get_engine()->get_real_type(), std::powl(argv[0].as_real(), argv[1].as_real()));
 }
 
