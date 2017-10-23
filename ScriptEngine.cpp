@@ -1198,12 +1198,12 @@ public:
 	int parse_arguments(script_engine::block * block);
 	void parse_statements(script_engine::block * block);
 	void parse_inline_block(script_engine::block * block, script_engine::block_kind kind);
-	void parse_block(script_engine::block * block, std::vector < std::string > const * args, bool adding_result);
+	void parse_block(script_engine::block * block, std::vector < std::string > const * args, bool adding_result, bool finding_this);
 private:
 	void register_function(function const & func);
 	symbol * search(std::string const & name);
 	symbol * search_result();
-	void scan_current_scope(int level, std::vector < std::string > const * args, bool adding_result);
+	void scan_current_scope(int level, std::vector < std::string > const * args, bool adding_result, bool finding_this);
 	void write_operation(script_engine::block * block, char const * name, int clauses);
 
 	typedef script_engine::code code;
@@ -1221,7 +1221,7 @@ parser::parser(script_engine * e, scanner * s, int funcc, function const * funcv
 
 	try
 	{
-		scan_current_scope(0, NULL, false);
+		scan_current_scope(0, NULL, false, false);
 		parse_statements(engine->main_block);
 		if (lex->next != tk_end)
 			throw parser_error("cannot be interpreted. (did you forget \";\"?"); //解釈できないものがあります(「;」を忘れていませんか)
@@ -1268,7 +1268,7 @@ parser::symbol * parser::search_result()
 	return NULL;
 }
 
-void parser::scan_current_scope(int level, std::vector < std::string > const * args, bool adding_result)
+void parser::scan_current_scope(int level, std::vector < std::string > const * args, bool adding_result, bool finding_this)
 {
 	//look ahead to register an identifier //先読みして識別子を登録する
 	scanner lex2(*lex);
@@ -1348,11 +1348,64 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 							lex2.advance();
 						}
 					}
+
+					// Extra scan ahead for "this" keyword to use as an extra argument.
+					if (kind == script_engine::bk_function || kind == script_engine::bk_microthread)
+					{
+						
+						int cur2 = 0;
+						int cur3 = 0;
+						bool found_this = false;
+						lex2.advance();
+						while (cur2 >= 0 && lex2.next != tk_end && lex2.next != tk_invalid)
+						{
+							switch (lex2.next)
+							{
+							case tk_open_cur:
+								++cur2;
+								lex2.advance();
+								break;
+							case tk_close_cur:
+								--cur2;
+								lex2.advance();
+								break;
+							case tk_FUNCTION:
+							case tk_TASK:
+								lex2.advance();
+								while (cur3 >= 0 && lex2.next != tk_end && lex2.next != tk_invalid)
+								{
+									switch (lex2.next)
+									{
+									case tk_open_cur:
+										++cur2;
+										lex2.advance();
+										break;
+									case tk_close_cur:
+										--cur2;
+										lex2.advance();
+										break;
+									default:
+										lex2.advance();
+									}
+								}
+								break;
+							case tk_THIS:
+								if (!found_this) {
+									++(s.sub->arguments);
+									found_this = true;
+								}
+								lex2.advance();
+								break;
+							default:
+								lex2.advance();
+							}
+						}
+					}
 				}
 			}
 			break;
 			case tk_THIS:
-				if ((*current_frame).find("this") == (*current_frame).end())
+				if (finding_this)
 				{
 					symbol s;
 					s.level = level;
@@ -1922,14 +1975,17 @@ void parser::parse_statements(script_engine::block * block)
 			break;
 			default:
 
-				if(as_obj)
-					throw parser_error("Missing expression!");
+				if (as_obj)
+					s = search(prop);
 
 				//関数, sub呼出し  //function sub call
 				if (s->sub == NULL)
 					throw parser_error("変数は関数やsubのようには呼べません");
 
 				int argc = parse_arguments(block);
+
+				if (as_obj)
+					argc++;
 
 				if (argc != s->sub->arguments)
 					throw parser_error(s->sub->name + "wrong number of arguments"); //の引数の数が違います-translated
@@ -2079,7 +2135,7 @@ void parser::parse_statements(script_engine::block * block)
 			script_engine::block * b = engine->new_block(block->level + 1, script_engine::bk_loop);
 			std::vector < std::string > counter;
 			counter.push_back(s);
-			parse_block(b, &counter, false);
+			parse_block(b, &counter, false, false);
 			block->codes.push_back(code(lex->line, script_engine::pc_dup));
 			block->codes.push_back(code(lex->line, script_engine::pc_call, b, 1));
 
@@ -2266,7 +2322,9 @@ void parser::parse_statements(script_engine::block * block)
 					lex->advance();
 				}
 			}
-			parse_block(s->sub, &args, s->sub->kind == script_engine::bk_function);
+			parse_block(s->sub, &args, s->sub->kind == script_engine::bk_function,
+				s->sub->kind == script_engine::bk_function || 
+				s->sub->kind == script_engine::bk_microthread);
 			need_semicolon = false;
 		}
 
@@ -2282,11 +2340,11 @@ void parser::parse_statements(script_engine::block * block)
 void parser::parse_inline_block(script_engine::block * block, script_engine::block_kind kind)
 {
 	script_engine::block * b = engine->new_block(block->level + 1, kind);
-	parse_block(b, NULL, false);
+	parse_block(b, NULL, false, false);
 	block->codes.push_back(code(lex->line, script_engine::pc_call, b, 0));
 }
 
-void parser::parse_block(script_engine::block * block, std::vector < std::string > const * args, bool adding_result)
+void parser::parse_block(script_engine::block * block, std::vector < std::string > const * args, bool adding_result, bool finding_this)
 {
 	if (lex->next != tk_open_cur)
 		throw parser_error("\"{\" operator is required");  //"\"{\"が必要です"
@@ -2294,7 +2352,15 @@ void parser::parse_block(script_engine::block * block, std::vector < std::string
 
 	frame.push_back(scope(block->kind));
 
-	scan_current_scope(block->level, args, adding_result);
+	scan_current_scope(block->level, args, adding_result, finding_this);
+
+	symbol * t = search("this");
+	if (t != NULL 
+	&& (block->kind == script_engine::bk_function 
+	||  block->kind == script_engine::bk_microthread))
+	{
+		block->codes.push_back(code(lex->line, script_engine::pc_assign, t->level, t->variable));
+	}
 
 	if (args != NULL)
 	{
