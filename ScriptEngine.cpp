@@ -1277,6 +1277,7 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 		scope * current_frame = &frame[frame.size() - 1];
 		int cur = 0;
 		int var = 0;
+		bool registered_this = false;
 
 		if (adding_result)
 		{
@@ -1405,7 +1406,7 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 			}
 			break;
 			case tk_THIS:
-				if (finding_this)
+				if (finding_this && !registered_this)
 				{
 					symbol s;
 					s.level = level;
@@ -1413,6 +1414,7 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 					s.variable = var;
 					++var;
 					(*current_frame)["this"] = s;
+					registered_this = true;
 				}
 				lex2.advance();
 			break;
