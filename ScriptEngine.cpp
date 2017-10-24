@@ -1353,36 +1353,37 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 					// Extra scan ahead for "this" keyword to use as an extra argument.
 					if (kind == script_engine::bk_function || kind == script_engine::bk_microthread)
 					{
-						
-						int cur2 = 0;
-						int cur3 = 0;
-						bool found_this = false;
 						lex2.advance();
-						while (cur2 >= 0 && lex2.next != tk_end && lex2.next != tk_invalid)
+						lex2.advance();
+						cur++;
+						lex2.advance();
+						bool found_this = false;
+						int func;
+						while (cur >= 1 && lex2.next != tk_end && lex2.next != tk_invalid)
 						{
 							switch (lex2.next)
 							{
 							case tk_open_cur:
-								++cur2;
+								++cur;
 								lex2.advance();
 								break;
 							case tk_close_cur:
-								--cur2;
+								--cur;
 								lex2.advance();
 								break;
 							case tk_FUNCTION:
 							case tk_TASK:
-								lex2.advance();
-								while (cur3 >= 0 && lex2.next != tk_end && lex2.next != tk_invalid)
+								func = cur;
+								while (cur >= func && lex2.next != tk_end && lex2.next != tk_invalid)
 								{
 									switch (lex2.next)
 									{
 									case tk_open_cur:
-										++cur2;
+										++cur;
 										lex2.advance();
 										break;
 									case tk_close_cur:
-										--cur2;
+										--cur;
 										lex2.advance();
 										break;
 									default:
