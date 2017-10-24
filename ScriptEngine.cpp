@@ -1353,7 +1353,8 @@ void parser::scan_current_scope(int level, std::vector < std::string > const * a
 					// Extra scan ahead for "this" keyword to use as an extra argument.
 					if (kind == script_engine::bk_function || kind == script_engine::bk_microthread)
 					{
-						lex2.advance();
+						if (lex2.next == tk_close_par)
+							lex2.advance();
 						lex2.advance();
 						cur++;
 						lex2.advance();
