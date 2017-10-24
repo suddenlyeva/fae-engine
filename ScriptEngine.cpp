@@ -1616,9 +1616,34 @@ void parser::parse_suffix(script_engine::block * block)
 
 			while (lex->next == tk_property) 
 			{
-				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
-				write_operation(block, "obj_get_property", 2);
+
 				lex->advance();
+
+				if (lex->next == tk_open_par)
+				{
+					// TODO: Duplicated Code
+					symbol * s = search(lex->word);
+					if (s == NULL)
+						throw parser_error(lex->word + "‚Í–¢’è‹`‚ÌŽ¯•ÊŽq‚Å‚·");
+
+					if (s->sub != NULL)
+					{
+						if (s->sub->kind != script_engine::bk_function)
+							throw parser_error("sub‚âtask‚ÍŽ®’†‚ÅŒÄ‚×‚Ü‚¹‚ñ");
+
+						int argc = parse_arguments(block) + 1;
+
+						if (argc != s->sub->arguments)
+							throw parser_error(s->sub->name + "‚Ìˆø”‚Ì”‚ªˆá‚¢‚Ü‚·");
+
+						block->codes.push_back(code(lex->line, script_engine::pc_call_and_push_result, s->sub, argc));
+					}
+				}
+				else 
+				{
+					block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_string_type(), to_wide(lex->word))));
+					write_operation(block, "obj_get_property", 2);
+				}
 			}
 
 			while (lex->next == tk_open_bra)
