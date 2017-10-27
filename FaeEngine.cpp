@@ -151,13 +151,14 @@ void RunSample(char* scriptName)
 	//--------------------------------
 	//call @Console
 	if (machine.has_event("Console")) {
+
 		std::string input;
-		machine.call("Console");
-		ErrorHandle::CheckMachineError(machine);
-		if (machine.has_event("Setup") && !machine.get_stopped()) {
+
+		if (!machine.get_stopped() && machine.has_event("Setup")) {
 			machine.call("Setup");
-			ErrorHandle::CheckMachineError(machine);
+			ErrorHandle::CheckMachineError(machine); 
 		}
+
 		while (!machine.get_stopped() && std::getline(std::cin, input)) {
 			machine.call("Console");
 			ErrorHandle::CheckMachineError(machine);
@@ -167,15 +168,16 @@ void RunSample(char* scriptName)
 	//--------------------------------
 	//call @Ticker
 	if (machine.has_event("Ticker")) {
-		machine.call("Ticker");
-		if (machine.has_event("Setup") && !machine.get_stopped()) {
+
+		if (!machine.get_stopped() && machine.has_event("Setup")) {
 			machine.call("Setup");
 			ErrorHandle::CheckMachineError(machine);
 		}
+
 		while(!machine.get_stopped()) {
-				machine.call("Ticker");
-				ErrorHandle::CheckMachineError(machine);
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000/60));
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
+			machine.call("Ticker");
+			ErrorHandle::CheckMachineError(machine);
 		}
 	}
 }
