@@ -7,7 +7,7 @@ For now this simple prime sifting script can serve as a decent look into how the
 
 #prime.fae
 
-```
+```JavaScript
 // Designates a console loop as the main loop for this program.
 // It will advance forwards one step when a newline character is entered.
 @Console {
