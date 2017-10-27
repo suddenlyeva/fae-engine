@@ -32,7 +32,7 @@ task PrimeInfo {
     // This block starts running a series of tasks on the object.
     // Fae guarantees the order of execution of these microthreads.
     currentNumber.Label;
-    currentNumber.Factorize
+    currentNumber.Factorize;
     currentNumber.CheckPrime;
     currentNumber.Update;
 
@@ -60,7 +60,7 @@ task PrimeInfo {
         // All it needs to do is print the number every n steps and count a factor if it does.
         task Factor(n) {
             loop {
-                if(this.value > 1) {
+                if (n > 1) {
                     print(",");
                 }
                 print(n);
