@@ -7,7 +7,7 @@ For now this simple prime sifting script can serve as a decent look into how the
 
 #prime.fae
 
-```JavaScript
+```C#
 // Designates a console loop as the main loop for this program.
 // It will advance forwards one step when a newline character is entered.
 @Console {
@@ -26,7 +26,7 @@ task PrimeInfo {
     // This is an object created using JSON-style syntax.
     let currentNumber = {
         value :   1,
-        factors : 1
+        factors : 0
     };
     
     // This block starts running a series of tasks on the object.
@@ -59,18 +59,13 @@ task PrimeInfo {
         
         // All it needs to do is print the number every n steps and count a factor if it does.
         task Factor(n) {
-            if (n == 1) {
-                loop {
-                    print("1");
-                    yield;
+            loop {
+                if(this.value > 1) {
+                    print(",");
                 }
-            }
-            else {
-                loop {
-                    print("," ~ n);
-                    this.factors++;
-                    wait(n);
-                }
+                print(n);
+                this.factors++;
+                wait(n);
             }
         }
     }
@@ -78,7 +73,7 @@ task PrimeInfo {
     // If the number has 2 factors it is prime.
     task CheckPrime {
         loop {
-            if (this.value != 1 && this.factors <= 2) {
+            if (this.factors == 2) {
                 print(" PRIME!");
             }
             yield;
@@ -89,7 +84,7 @@ task PrimeInfo {
     task Update {
         loop {
             this.value++;
-            this.factors = 1;
+            this.factors = 0;
             yield;
         }
     }
