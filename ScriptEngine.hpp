@@ -223,20 +223,17 @@ namespace gstd
 	{
 	private:
 
-		struct object {
-			int ref_count;
-			std::unordered_map<std::wstring, value> properties;
-		};
+		typedef std::unordered_map<std::wstring, value> object;
 
 		struct body
 		{
 			int ref_count;
 			type_data * type;
 			lightweight_vector<value> array_value;
-			object * object_value = NULL;
 
 			union
 			{
+				object * object_value;
 				long double real_value;
 				wchar_t char_value;
 				bool boolean_value;
@@ -253,12 +250,11 @@ namespace gstd
 
 		value(type_data * t)
 		{
-			if (t->get_kind() == t->tk_object) {
-				data = new body();
+			if (t->get_kind() == type_data::tk_object) {
+				data = new body;
 				data->ref_count = 1;
 				data->type = t;
 				data->object_value = new object();
-				data->object_value->ref_count = 1;
 			}
 			else {
 				data = NULL;
@@ -312,7 +308,7 @@ namespace gstd
 			{
 				--(data->ref_count);
 				if (data->ref_count == 0) {
-					if (data->object_value != NULL)
+					if (data->type->get_kind() == type_data::tk_object)
 						delete data->object_value;
 					delete data;
 				}
@@ -329,7 +325,7 @@ namespace gstd
 			{
 				--(data->ref_count);
 				if (data->ref_count == 0) {
-					if (data->object_value != NULL)
+					if (data->type->get_kind() == type_data::tk_object)
 						delete data->object_value;
 					delete data;
 				}
@@ -360,17 +356,17 @@ namespace gstd
 		bool register_property(const std::wstring & name, const value & val)
 		{
 			unique();
-			if (data->object_value != NULL)
-				return std::get<1>(data->object_value->properties.try_emplace(name, val));
+			if (data->type->get_kind() == type_data::tk_object)
+				return std::get<1>(data->object_value->try_emplace(name, val));
 
 			return false;
 		}
 
 		const value get_property(const std::wstring & name) const
 		{
-			if (data->object_value != NULL) {
-				if (data->object_value->properties.count(name) != 0) {
-					return data->object_value->properties[name];
+			if (data->type->get_kind() == type_data::tk_object) {
+				if (data->object_value->count(name) != 0) {
+					return data->object_value->at(name);
 				}
 			}
 
@@ -379,9 +375,10 @@ namespace gstd
 
 		bool set_property(const std::wstring & name, const value & val)
 		{
-			if (data->object_value != NULL && val.has_data()) {
-				if (data->object_value->properties.at(name).get_type() == val.get_type()) {
-					data->object_value->properties.at(name) = val;
+
+			if (data->type->get_kind() == type_data::tk_object && val.has_data()) {
+				if (data->object_value->at(name).get_type() == val.get_type()) {
+					data->object_value->at(name) = val;
 					return true;
 				}
 			}
@@ -493,7 +490,8 @@ namespace gstd
 					long double isInt;
 					if (modf(data->real_value, &isInt) == 0.0) {
 						std::swprintf(buffer, L"%d", static_cast < int > (data->real_value));
-					} else {
+					}
+					else {
 						std::swprintf(buffer, L"%Lf", data->real_value);
 					}
 					return std::wstring(buffer);
@@ -579,7 +577,7 @@ namespace gstd
 				--(data->ref_count);
 				data = new body(*data);
 				data->ref_count = 1;
-				if (data->object_value != NULL) {
+				if (data->type->get_kind() == type_data::tk_object) {
 					data->object_value = new object(*data->object_value);
 				}
 			}
