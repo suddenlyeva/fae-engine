@@ -361,7 +361,7 @@ void scanner::advance()
 		}
 		else
 		{
-			throw parser_error("単独のピリオドはこのスクリプトでは使いません");
+			throw parser_error("Unexpected standalone period.");
 		}
 		break;
 
@@ -384,7 +384,7 @@ void scanner::advance()
 			if (string_value.size() == 1)
 				char_value = string_value[0];
 			else
-				throw parser_error("文字型の値の長さは1だけです");
+				throw parser_error("Characters must have a length of 1.");
 		}
 	}
 	break;
@@ -418,7 +418,7 @@ void scanner::advance()
 			}
 			break;
 		default:
-			throw parser_error("特殊文字が変です(「\"...\"」を忘れていませんか)");
+			throw parser_error("Could not interpret special character. (Did you forget「\"...\"」for a string?)");
 		}
 	}
 	break;
@@ -515,12 +515,12 @@ value add(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -545,12 +545,12 @@ value subtract(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -574,12 +574,12 @@ value multiply(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -603,12 +603,12 @@ value divide(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -632,12 +632,12 @@ value remainder(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -676,12 +676,12 @@ value power(script_machine * machine, int argc, value const * argv)
 	{
 		if (argv[0].get_type() != argv[1].get_type())
 		{
-			machine->raise_error("型が一致しません");
+			machine->raise_error("Type mismatch on array operation.");
 			return value();
 		}
 		if (argv[0].length_as_array() != argv[1].length_as_array())
 		{
-			machine->raise_error("長さが一致しません");
+			machine->raise_error("Length mismatch on array operation.");
 			return value();
 		}
 		value result;
@@ -757,7 +757,7 @@ value compare(script_machine * machine, int argc, value const * argv)
 		case type_data::tk_object:
 		{
 			//TODO
-			machine->raise_error("Object comparison not yet supported.");
+			machine->raise_error("Object comparison is not yet supported.");
 		}
 		break;
 
@@ -791,7 +791,7 @@ value predecessor(script_machine * machine, int argc, value const * argv)
 	case type_data::tk_boolean:
 		return value(argv[0].get_type(), false);
 	default:
-		machine->raise_error("(value) predecessor of this type cannot be used"); //この型の値にpredecessorは使えません
+		machine->raise_error("Decrement operations cannot be used with this type.");
 		return value();
 	}
 }
@@ -814,7 +814,7 @@ value successor(script_machine * machine, int argc, value const * argv)
 	case type_data::tk_boolean:
 		return value(argv[0].get_type(), true);
 	default:
-		machine->raise_error("(value) successor of this type cannot be used"); //この型の値にsuccessorは使えません
+		machine->raise_error("Increment operations cannot be used with this type.");
 		return value();
 	}
 }
@@ -853,7 +853,7 @@ value index(script_machine * machine, int argc, value const * argv)
 
 	if (argv[0].get_type()->get_kind() != type_data::tk_array)
 	{
-		machine->raise_error("配列以外にindexを使いました");
+		machine->raise_error("Attempted to index a non-array value.");
 		return value();
 	}
 
@@ -861,13 +861,13 @@ value index(script_machine * machine, int argc, value const * argv)
 
 	if (index != static_cast < int > (index))
 	{
-		machine->raise_error("小数点以下があります");
+		machine->raise_error("Array index contains a decimal point.");
 		return value();
 	}
 
 	if (index < 0 || index >= argv[0].length_as_array())
 	{
-		machine->raise_error("配列のサイズを超えています");
+		machine->raise_error("Array index is out of bounds.");
 		return value();
 	}
 
@@ -881,7 +881,7 @@ value index_writable(script_machine * machine, int argc, value const * argv)
 
 	if (argv[0].get_type()->get_kind() != type_data::tk_array)
 	{
-		machine->raise_error("配列以外にindex!を使いました");
+		machine->raise_error("Attempted to write to an index of a non-array value.");
 		return value();
 	}
 
@@ -889,13 +889,13 @@ value index_writable(script_machine * machine, int argc, value const * argv)
 
 	if (index != static_cast < int > (index))
 	{
-		machine->raise_error("小数点以下があります");
+		machine->raise_error("Array index contains a decimal point.");
 		return value();
 	}
 
 	if (index < 0 || index >= argv[0].length_as_array())
 	{
-		machine->raise_error("配列のサイズを超えています");
+		machine->raise_error("Array index is out of bounds.");
 		return value();
 	}
 
@@ -910,7 +910,7 @@ value slice(script_machine * machine, int argc, value const * argv)
 
 	if (argv[0].get_type()->get_kind() != type_data::tk_array)
 	{
-		machine->raise_error("配列以外にsliceを使いました");
+		machine->raise_error("Attempted to slice a non-array value.");
 		return value();
 	}
 
@@ -918,7 +918,7 @@ value slice(script_machine * machine, int argc, value const * argv)
 
 	if (index_1 != static_cast < int > (index_1))
 	{
-		machine->raise_error("開始位置に小数点以下があります");
+		machine->raise_error("The starting index of the slice contains a decimal point.");
 		return value();
 	}
 
@@ -926,13 +926,13 @@ value slice(script_machine * machine, int argc, value const * argv)
 
 	if (index_2 != static_cast < int > (index_2))
 	{
-		machine->raise_error("終端位置に小数点以下があります");
+		machine->raise_error("The ending index of the slice contains a decimal point.");
 		return value();
 	}
 
 	if (index_1 < 0 || index_1 > index_2 || index_2 > argv[0].length_as_array())
 	{
-		machine->raise_error("配列のサイズを超えています");
+		machine->raise_error("Array index is out of bounds.");
 		return value();
 	}
 
@@ -952,7 +952,7 @@ value erase(script_machine * machine, int argc, value const * argv)
 
 	if (argv[0].get_type()->get_kind() != type_data::tk_array)
 	{
-		machine->raise_error("配列以外にeraseを使いました");
+		machine->raise_error("Cannot use \"erase\" on non-array element.");
 		return value();
 	}
 
@@ -961,13 +961,13 @@ value erase(script_machine * machine, int argc, value const * argv)
 
 	if (index_1 != static_cast < int > (index_1))
 	{
-		machine->raise_error("削除位置に小数点以下があります");
+		machine->raise_error("Erase index contains a decimal point.");
 		return value();
 	}
 
 	if (index_1 < 0 || index_1 >= argv[0].length_as_array())
 	{
-		machine->raise_error("Exeeds the size of the array"); //配列のサイズを超えています
+		machine->raise_error("Array index is out of bounds.");
 		return value();
 	}
 
@@ -990,13 +990,13 @@ value append(script_machine * machine, int argc, value const * argv)
 
 	if (argv[0].get_type()->get_kind() != type_data::tk_array)
 	{
-		machine->raise_error("配列以外にappendを使いました");
+		machine->raise_error("Cannot append to non-array element.");
 		return value();
 	}
 
 	if (argv[0].length_as_array() > 0 && argv[0].get_type()->get_element() != argv[1].get_type())
 	{
-		machine->raise_error("type mismatch"); //型が一致しません
+		machine->raise_error("Type mismatch on array append.");
 		return value();
 	}
 
@@ -1012,16 +1012,15 @@ value concatenate(script_machine * machine, int argc, value const * argv)
 	value result = argv[0];
 	value append = argv[1];
 
-	if (result.get_type()->get_kind() != type_data::tk_array) {
+	if (result.get_type()->get_kind() != type_data::tk_array)
 		result = value(machine->get_engine()->get_string_type(),result.as_string());
-	}
-	if (append.get_type()->get_kind() != type_data::tk_array) {
+
+	if (append.get_type()->get_kind() != type_data::tk_array)
 		append = value(machine->get_engine()->get_string_type(),append.as_string());
-	}
 
 	if (result.length_as_array() > 0 && append.length_as_array() > 0 && result.get_type() != append.get_type())
 	{
-		machine->raise_error("Type mismatch on array concatenation."); //型が一致しません
+		machine->raise_error("Type mismatch on array concatenation.");
 		return value();
 	}
 
@@ -1461,7 +1460,7 @@ void parser::write_operation(script_engine::block * block, char const * name, in
 	symbol * s = search(name);
 	assert(s != NULL);
 	if (s->sub->arguments != clauses)
-		throw parser_error("演算子に対応する関数が上書き定義されましたが引数の数が違います");
+		throw parser_error("A function called by an operator was overwritten using a different number of arguments.");
 
 	block->codes.push_back(script_engine::code(lex->line, script_engine::pc_call_and_push_result, s->sub, clauses));
 }
@@ -1469,13 +1468,13 @@ void parser::write_operation(script_engine::block * block, char const * name, in
 void parser::parse_parentheses(script_engine::block * block)
 {
 	if (lex->next != tk_open_par)
-		throw parser_error("\"(\" is required"); //\"(\"が必要です  // "(" Is required
+		throw parser_error("Expected token: \"(\"");
 	lex->advance();
 
 	parse_expression(block);
 
 	if (lex->next != tk_close_par)
-		throw parser_error("\")\" is required"); //"\")\"が必要です" // ")" Is required
+		throw parser_error("Expected token: \")\"");
 	lex->advance();
 }
 
@@ -1506,19 +1505,19 @@ void parser::parse_clause(script_engine::block * block)
 	{
 		symbol * s = search(lex->word);
 		if (s == NULL)
-			throw parser_error(lex->word + "は未定義の識別子です");
+			throw parser_error("Identifier not found: " + lex->word);
 
 		lex->advance();
 
 		if (s->sub != NULL)
 		{
 			if (s->sub->kind != script_engine::bk_function)
-				throw parser_error("subやtaskは式中で呼べません");
+				throw parser_error("Cannot call a subroutine or task inside an expression.");
 
 			int argc = parse_arguments(block);
 
 			if (argc != s->sub->arguments)
-				throw parser_error(s->sub->name + "の引数の数が違います");
+				throw parser_error("Incorrect number of arguments for: " + s->sub->name);
 
 			block->codes.push_back(code(lex->line, script_engine::pc_call_and_push_result, s->sub, argc));
 		}
@@ -1541,7 +1540,7 @@ void parser::parse_clause(script_engine::block * block)
 			lex->advance();
 		}
 		if (lex->next != tk_close_bra)
-			throw parser_error("\"]\"が必要です");
+			throw parser_error("Expected token: \"]\"");
 		lex->advance();
 	}
 	else if (lex->next == tk_open_abs)
@@ -1550,7 +1549,7 @@ void parser::parse_clause(script_engine::block * block)
 		parse_expression(block);
 		write_operation(block, "absolute", 1);
 		if (lex->next != tk_close_abs)
-			throw parser_error("\"|)\"is required"); //\"|)\"が必要です
+			throw parser_error("Expected token: \"|\""); //\"|)\"が必要です
 		lex->advance();
 	}
 	else if (lex->next == tk_open_par)
@@ -1596,7 +1595,7 @@ void parser::parse_clause(script_engine::block * block)
 	}
 	else
 	{
-		throw parser_error("There is not a valid expression term"); //項として無効な式があります
+		throw parser_error("There is not a valid expression term."); //項として無効な式があります
 	}
 }
 
@@ -1624,17 +1623,19 @@ void parser::parse_suffix(script_engine::block * block)
 					// TODO: Duplicated Code
 					symbol * s = search(lex->word);
 					if (s == NULL)
-						throw parser_error(lex->word + "は未定義の識別子です");
+						throw parser_error("Identifier not found: " + lex->word);
+
+					lex->advance();
 
 					if (s->sub != NULL)
 					{
 						if (s->sub->kind != script_engine::bk_function)
-							throw parser_error("subやtaskは式中で呼べません");
+							throw parser_error("Cannot call a subroutine or task inside an expression.");
 
 						int argc = parse_arguments(block) + 1;
 
 						if (argc != s->sub->arguments)
-							throw parser_error(s->sub->name + "の引数の数が違います");
+							throw parser_error("Incorrect number of arguments for: " + s->sub->name);
 
 						block->codes.push_back(code(lex->line, script_engine::pc_call_and_push_result, s->sub, argc));
 					}
@@ -1664,7 +1665,7 @@ void parser::parse_suffix(script_engine::block * block)
 				}
 
 				if (lex->next != tk_close_bra)
-					throw parser_error("\"]\" is required"); //\"]\"が必要です
+					throw parser_error("Expected token: \"]\"");
 				lex->advance();
 			}
 		}
@@ -1801,7 +1802,7 @@ int parser::parse_arguments(script_engine::block * block)
 			lex->advance();
 		}
 		if (lex->next != tk_close_par)
-			throw parser_error("\")\" is required"); //"\")\"が必要です
+			throw parser_error("Expected token: \")\"");
 		lex->advance();
 	}
 	return result;
@@ -1933,7 +1934,7 @@ void parser::parse_statements(script_engine::block * block)
 					f = "concatenate";
 					break;
 				default:
-					throw parser_error("Mismatched token definition.");
+					throw parser_error("Cannot find an operation matching this token.");
 
 				}
 				lex->advance();
@@ -2009,7 +2010,7 @@ void parser::parse_statements(script_engine::block * block)
 
 				//関数, sub呼出し  //function sub call
 				if (s->sub == NULL)
-					throw parser_error("変数は関数やsubのようには呼べません");
+					throw parser_error("Attempted to call a variable as a function or subroutine.");
 
 				int argc = parse_arguments(block);
 
@@ -2017,7 +2018,7 @@ void parser::parse_statements(script_engine::block * block)
 					argc++;
 
 				if (argc != s->sub->arguments)
-					throw parser_error(s->sub->name + "wrong number of arguments"); //の引数の数が違います-translated
+					throw parser_error("Incorrect number of arguments for: " + s->sub->name);
 
 				block->codes.push_back(code(lex->line, script_engine::pc_call, s->sub, argc));
 			}
@@ -2027,7 +2028,7 @@ void parser::parse_statements(script_engine::block * block)
 			lex->advance();
 
 			if (lex->next != tk_word)
-				throw parser_error("identifiers are required"); //識別子が必要です -translated
+				throw parser_error("Expected an identifier.");
 
 			symbol * s = search(lex->word);
 			lex->advance();
@@ -2105,7 +2106,7 @@ void parser::parse_statements(script_engine::block * block)
 			}
 
 			if (lex->next != tk_open_par)
-				throw parser_error("\"(\" is required"); //"\"(\"が必要です" -translated 
+				throw parser_error("Expected token: \"(\"");
 			lex->advance();
 
 			if (lex->next == tk_LET || lex->next == tk_REAL)
@@ -2114,14 +2115,14 @@ void parser::parse_statements(script_engine::block * block)
 			}
 
 			if (lex->next != tk_word)
-				throw parser_error("identifier expected"); //"識別子が必要です" - translated
+				throw parser_error("Expected an identifier.");
 
 			std::string s = lex->word;
 
 			lex->advance();
 
 			if (lex->next != tk_IN)
-				throw parser_error("must be in"); //"inが必要です" - translated
+				throw parser_error("Use of \"in\" is required.");
 			lex->advance();
 
 			if (lex->next == tk_word) {
@@ -2134,14 +2135,14 @@ void parser::parse_statements(script_engine::block * block)
 				parse_expression(block);
 
 				if (lex->next != tk_range)
-					throw parser_error("\"..\" must be required"); //"\"..\"が必要です" - translated
+					throw parser_error("Expected token: \"..\"");
 				lex->advance();
 
 				parse_expression(block);
 			}
 
 			if (lex->next != tk_close_par)
-				throw parser_error("\")\" is required"); //"\")\"が必要です" - translated
+				throw parser_error("Expected token: \")\"");
 			lex->advance();
 
 			if (!back)
@@ -2214,7 +2215,7 @@ void parser::parse_statements(script_engine::block * block)
 			parse_parentheses(block);
 
 			if (lex->next != tk_arrow)
-				throw parser_error("\"=>\" is needed");
+				throw parser_error("Expected token: \"=>\"");
 			lex->advance();
 
 			block->codes.push_back(code(lex->line, script_engine::pc_case_begin));
@@ -2223,7 +2224,7 @@ void parser::parse_statements(script_engine::block * block)
 				lex->advance();
 
 				if (lex->next != tk_open_par)
-					throw parser_error("\"(\" is needed"); // \"(\"が必要です - translated
+					throw parser_error("Expected token: \"(\"");
 				block->codes.push_back(code(lex->line, script_engine::pc_case_begin));
 				do
 				{
@@ -2241,7 +2242,7 @@ void parser::parse_statements(script_engine::block * block)
 				block->codes.push_back(code(lex->line, script_engine::pc_push_value, value(engine->get_boolean_type(), false)));
 				block->codes.push_back(code(lex->line, script_engine::pc_case_end));
 				if (lex->next != tk_close_par)
-					throw parser_error("\")\" is needed"); // "\")\"が必要です" - translated
+					throw parser_error("Expected token: \")\"");
 				lex->advance();
 
 				block->codes.push_back(code(lex->line, script_engine::pc_case_if_not));
@@ -2280,7 +2281,7 @@ void parser::parse_statements(script_engine::block * block)
 				parse_expression(block);
 				symbol * s = search_result();
 				if (s == NULL)
-					throw parser_error("ここはfunctionの中ではありません"); //function is not there?
+					throw parser_error("Attempted to return from outside a function.");
 
 				block->codes.push_back(code(lex->line, script_engine::pc_assign, s->level, s->variable));
 			}
@@ -2302,14 +2303,14 @@ void parser::parse_statements(script_engine::block * block)
 
 			lex->advance();
 			if (lex->next != tk_word)
-				throw parser_error("identifiers required"); // "識別子が必要です" - translated
+				throw parser_error("Expected an identifier.");
 
 			symbol * s = search(lex->word);
 
 			if (is_event)
 			{
 				if (s->sub->level > 1)
-					throw parser_error("イベントを深い階層に記述することはできません");
+					throw parser_error("Machine events cannot be defined deeper than global scope.");
 				events[s->sub->name] = s->sub;
 			}
 
@@ -2327,7 +2328,7 @@ void parser::parse_statements(script_engine::block * block)
 						{
 							lex->advance();
 							if (lex->next != tk_word)
-								throw parser_error("仮引数が必要です"); //arguments are required?
+								throw parser_error("Expected an argument identifier.");
 						}
 						args.push_back(lex->word);
 						lex->advance();
@@ -2336,18 +2337,17 @@ void parser::parse_statements(script_engine::block * block)
 						lex->advance();
 					}
 					if (lex->next != tk_close_par)
-						throw parser_error("\")\" is required"); // "\")\"が必要です" - translated
+						throw parser_error("Expected token: \")\"");
 					lex->advance();
 				}
 			}
-			else
+			else // Optionally call a subroutine with empty parentheses
 			{
-				//互換性のため空の括弧だけ許す
 				if (lex->next == tk_open_par)
 				{
 					lex->advance();
 					if (lex->next != tk_close_par)
-						throw parser_error("\")\"が必要…というか\"(\"要らんです"); //")" must be "(" ?
+						throw parser_error("Optional \"()\" in subroutine call must be empty.");
 					lex->advance();
 				}
 			}
@@ -2643,7 +2643,7 @@ void script_machine::advance()
 							&& (dest->length_as_array() == 0 || src->length_as_array() == 0)
 							&& dest->get_type()->get_element()->get_kind() != type_data::tk_char
 							&& src->get_type()->get_element()->get_kind() == type_data::tk_char))
-						raise_error("代入によって型が変えられようとしました"); //type was changed by the assignment
+						raise_error("Type mismatch on variable assignment.");
 					*dest = *src;
 					stack->pop_back();
 					break;
@@ -2664,7 +2664,7 @@ void script_machine::advance()
 					&& (dest->length_as_array() == 0 || src->length_as_array() == 0)
 					&& dest->get_type()->get_element()->get_kind() != type_data::tk_char
 					&& src->get_type()->get_element()->get_kind() == type_data::tk_char))
-				raise_error("代入によって型が変えられようとしました");	//type was changed by the assignment
+				raise_error("Type mismatch on variable assignment.");
 			else
 			{
 				dest->overwrite(*src);
@@ -2944,7 +2944,7 @@ void script_machine::advance()
 				{
 					variables_t * vars = &i->variables;
 					if (vars->length <= c->variable || !((*vars).at[c->variable].has_data()))
-						raise_error("一回も代入していない変数を使おうとしました"); //we do not use a variable subsitution at once?
+						raise_error("Attempted to use a variable that has not been initialized.");
 					else
 					{
 						value * var = &(*vars).at[c->variable];
