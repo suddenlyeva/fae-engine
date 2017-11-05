@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8B13CB0E-FFB1-4264-BC6B-8B8A3913192E}</ProjectGuid>
-    <RootNamespace>fae</RootNamespace>
+    <ProjectGuid>{8DA3D163-6291-4D08-8AFE-AF790042D274}</ProjectGuid>
+    <RootNamespace>Fae</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -110,7 +110,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="lightweight_vector.h" />
+    <ClCompile Include="FaeEngine.cpp" />
+    <ClCompile Include="ScriptEngine.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ScriptEngine.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
