@@ -19,8 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\type_data.h" />
-    <ClInclude Include="src\lightweight_vector.h" />
+    <ClInclude Include="include\fvector.h" />
+    <ClInclude Include="include\ftype.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8B13CB0E-FFB1-4264-BC6B-8B8A3913192E}</ProjectGuid>
@@ -73,7 +73,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);src</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);include</IncludePath>
+    <LibraryPath>lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -93,7 +94,7 @@
       </Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>lib\*.lib;lib\*.dll;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icudt.lib;icudt60.dll;icuind.lib;icuin60d.dll;icuiod.lib;icuio60d.dll;icuucd.lib;icuuc60d.dll;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

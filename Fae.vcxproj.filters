@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\lightweight_vector.h">
+    <ClInclude Include="include\fvector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\type_data.h">
+    <ClInclude Include="include\ftype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

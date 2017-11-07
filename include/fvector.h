@@ -3,15 +3,15 @@
 
 namespace fae 
 {
+	// Use fastest integer type for indexing
+	using index = std::uint_fast32_t;
+
 	// Expandable array type
 	// Provides quick insertions and deletions
 	template <typename T>
-	class lightweight_vector
+	class fVector
 	{
 	public:
-		// Use fastest integer type for indexing
-		using index = std::uint_fast32_t;
-
 		// Fields
 		index length;	// Dynamic size
 		index capacity;	// Memory buffer
@@ -23,13 +23,13 @@ namespace fae
 
 		//
 		// Default Constructor
-		lightweight_vector() : length(0), capacity(0), at(nullptr)
+		fVector() : length(0), capacity(0), at(nullptr)
 		{
 		}
 
 		//
 		// Copy Constructor
-		lightweight_vector(lightweight_vector const & source)
+		fVector(fVector const & source)
 		{
 			// Copy fields
 			length = source.length;
@@ -49,7 +49,7 @@ namespace fae
 
 		//
 		// Destructor
-		~lightweight_vector()
+		~fVector()
 		{
 			if (at != nullptr) {
 				delete[] at;
@@ -62,7 +62,7 @@ namespace fae
 
 		//
 		// Copy Assignment
-		lightweight_vector & operator = (lightweight_vector const & source)
+		fVector & operator = (fVector const & source)
 		{
 			// Replace current data
 			if (at != nullptr) {
@@ -144,7 +144,7 @@ namespace fae
 
 		//
 		// Adds an element to the end
-		void push_back(T const & value)
+		void push(T const & value)
 		{
 			if (length == capacity) {
 				expand();
@@ -155,7 +155,7 @@ namespace fae
 
 		//
 		// Removes an element from the end
-		void pop_back()
+		void pop()
 		{
 			if (length != 0) {
 				--length;
@@ -173,10 +173,9 @@ namespace fae
 		// Erases an element at specified index
 		void erase(index const & target)
 		{
-			pop_back();
+			pop();
 			// Shift out
-			for (index i = target; i < length; ++i)
-			{
+			for (index i = target; i < length; ++i) {
 				at[i] = at[i + 1];
 			}
 		}
@@ -190,13 +189,47 @@ namespace fae
 				expand();
 			}
 			// Shift over
-			for (index i = length; i > dest; --i)
-			{
+			for (index i = length; i > dest; --i) {
 				at[i] = at[i - 1];
 			}
 			// Copy in
 			at[dest] = value;
 			++length;
+		}
+
+		//
+		// Concatenates another array to this
+		void concatenate(fVector const & append)
+		{
+			// Recalculate length
+			index newLength = length + append.length;
+
+			// Cache index
+			index i;
+
+			// Resize if needed
+			if (capacity < newLength) {
+				while (capacity < newLength) {
+					capacity *= 2;
+				}
+				// Use only one reallocation
+				T * temp = new T[capacity];
+
+				// Copy into new buffer
+				for (i = 0; i < length; ++i) {
+					temp[i] = at[i];
+				}
+
+				// Replace old buffer
+				delete[] at;
+				at = temp;
+			}
+			// Copy append into array
+			for (i = length; i < newLength; ++i) {
+				at[i] = append.at[i];
+			}
+			// Update length
+			length = newLength;
 		}
 	};
 }
