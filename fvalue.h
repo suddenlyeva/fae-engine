@@ -1,7 +1,7 @@
 #pragma once
 #include <unordered_map>
 #include <variant>
-#include <unicode/ustdio.h>
+#include <unicode/numfmt.h>
 #include "ftype.h"
 
 namespace fae
@@ -209,7 +209,6 @@ namespace fae
 			return *this;
 		}
 
-
 		//
 		// Methods
 		//
@@ -286,6 +285,108 @@ namespace fae
 		{
 			unique();
 			array().concatenate(tail.array());
+		}
+
+		//
+		// Access contents from outside
+
+		// Boolean
+		const bool boolean() const
+		{
+			return std::get<bool>(data->contents);
+		}
+
+		// Number
+		const long double number() const
+		{
+			return std::get<long double>(data->contents);
+		}
+
+		// Character
+		const UChar character() const
+		{
+			return std::get<UChar>(data->contents);
+		}
+
+		// Convert to String
+		const icu::UnicodeString to_unicode() const
+		{
+			icu::UnicodeString result;
+
+			switch (data->type->base)
+			{
+				// From Boolean
+			case primitive::BOOL :
+				return boolean() ? u"true" : u"false";
+
+				// From Number
+			case primitive::NUMBER :
+
+				// Format into Unicode
+				static UErrorCode success = U_ZERO_ERROR;
+				static icu::NumberFormat * nf = icu::NumberFormat::createInstance(success);
+
+				// Check for integer
+				long double is_int;
+				if (std::modf(number(), &is_int) == 0.0L) {
+					return nf->format(static_cast<long long>(number()), result);
+				}
+				else { // Is a decimal
+					return nf->format(static_cast<double>(number()), result);
+				}
+
+				// From a character
+			case primitive::CHAR :
+				result += character();
+				return result;
+
+				// From an array
+			case primitive::ARRAY :
+
+				// Array is a string
+				if (data->type->inner_type->base == primitive::CHAR) {
+
+					// Generate Unicode
+					for (index i = 0, len = array().length; i < len; ++i) {
+						result += read_index(i).character();
+					}
+					return result;
+				}
+				else { // Array contains something else
+				    result = u"[";
+
+					// Fill with contents
+					for (index i = 0, len = array().length; i < len; ++i) {
+						if (i > 0) {
+							result += u",";
+						}
+						result += read_index(i).to_unicode();
+					}
+					result += u"]";
+					return result;
+				}
+			case primitive::OBJECT :
+
+				// Convert explicit value
+				if (object().count("value")) {
+					return get_property("value").to_unicode();
+				}
+				else {
+					// TODO
+					return u"Object";
+				}
+
+			default:
+				return u"(INTERNAL-ERROR)";
+			}
+		}
+
+		// Convert to UTF8
+		const std::string to_string() const
+		{
+			std::string result;
+			to_unicode().toUTF8String(result);
+			return result;
 		}
 	};
 }
