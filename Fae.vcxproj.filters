@@ -21,5 +21,8 @@
     <ClInclude Include="include\ftype.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="fvalue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -4,19 +4,25 @@
 
 namespace fae
 {
+	class fType;
+	using typehead   = fType const *;
+	using identifier = std::string const;
+
+	// Possible primitive types
+	enum primitive
+	{
+		BOOL,
+		NUMBER,
+		CHAR,
+		ARRAY,
+		OBJECT
+	};
+
+	//
 	// Holds a type for comparison
 	class fType
 	{
 	public:
-		// Possible primitive types
-		enum primitive
-		{
-			BOOL,
-			NUMBER,
-			CHAR,
-			ARRAY,
-			OBJECT
-		};
 
 		//
 		// Fields
@@ -26,12 +32,12 @@ namespace fae
 		const primitive base;
 
 		// For array children
-		const fType * inner_type;
+		const typehead inner_type;
 
 		// For typed object polymorphism and function linking
 		const index head_length;
-		fVector<std::string> poly_names;
-		fVector<fType *>	 poly_types;
+		fVector<identifier>	poly_names;
+		fVector<typehead>	poly_types;
 
 		//
 		// Constructors
@@ -45,67 +51,67 @@ namespace fae
 
 		//
 		// Array Constructor
-		explicit fType(primitive const & ARRAY, fType * const & element) 
+		explicit fType(primitive const & ARRAY, typehead const & element)
 			: base(ARRAY), inner_type(element), head_length(0)
 		{
 		}
 
 		//
 		// Base Object Type Constructor
-		explicit fType(primitive const & OBJECT, std::string const & name) 
+		explicit fType(primitive const & OBJECT, identifier & name)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Store a new name
-			poly_names = fVector<std::string>();
+			poly_names = fVector<identifier>();
 			poly_names.push(name);
 
 			// Store a new type
-			poly_types = fVector<fType *>();
+			poly_types = fVector<typehead>();
 			poly_types.push(this);
 		}
 
 		//
 		// Inherited Object Type Constructor
-		explicit fType(primitive const & OBJECT, std::string const & name, fType const & parent) 
+		explicit fType(primitive const & OBJECT, identifier & name, typehead const & parent)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Inherit names and add new to front
-			poly_names = parent.poly_names;
+			poly_names = parent->poly_names;
 			poly_names.insert(0, name);
 
 			// Inherit types and add new to front
-			poly_types = parent.poly_types;
+			poly_types = parent->poly_types;
 			poly_types.insert(0, this);
 		}
 		
 		//
 		// Union Object Type Constructor
-		explicit fType(primitive const & OBJECT, fVector<fType> const & parents)
+		explicit fType(primitive const & OBJECT, fVector<typehead> const & parents)
 			: base(OBJECT), head_length(parents.length), inner_type(nullptr)
 		{
 			// Store into new vectors
-			poly_names = fVector<std::string>();
-			poly_types = fVector<fType *>();
+			poly_names = fVector<identifier>();
+			poly_types = fVector<typehead>();
 
 			// Cache indices
 			index i, j;
 
 			// Loop through each typehead in order
 			for (i = 0; i < head_length; ++i) {
-				for (j = 0; j < parents[i].head_length; ++j) {
+				for (j = 0; j < parents[i]->head_length; ++j) {
 
 					// Add to front of new type
-					poly_names.push(parents[i].poly_names[j]);
-					poly_types.push(parents[i].poly_types[j]);
+					poly_names.push(parents[i]->poly_names[j]);
+					poly_types.push(parents[i]->poly_types[j]);
 				}
 			}
 			// Loop through each tail in order
 			for (i = 0; i < head_length; ++i) {
-				for (j = parents[i].head_length; j < parents.length; ++j) {
+				for (j = parents[i]->head_length; j < parents.length; ++j) {
 
 					// Add to type
-					poly_names.push(parents[i].poly_names[j]);
-					poly_types.push(parents[i].poly_types[j]);
+					poly_names.push(parents[i]->poly_names[j]);
+					poly_types.push(parents[i]->poly_types[j]);
 				}
 			}
 		}
