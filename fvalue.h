@@ -8,7 +8,7 @@ namespace fae
 {
 	class fValue;
 	using fObject = std::unordered_map<identifier, fValue>;
-	using fData   = std::variant<bool, long double, UChar, fVector<fValue>, fObject *>;
+	using fData   = std::variant<bool, long double, UChar, fVector<fValue>, fObject>;
 
 	//
 	// Generic dynamically typed data holder
@@ -25,10 +25,12 @@ namespace fae
 			fData contents;
 		};
 
+		//
+		// Hold the data as a pointer
 		body * data;
 
 		//
-		// For accessing contents
+		// For accessing contents locally
 
 		// Array
 		fVector<fValue> & array() const
@@ -37,7 +39,7 @@ namespace fae
 		}
 
 		// Object
-		fObject *& object() const
+		fObject & object() const
 		{
 			return std::get<fObject>(data->contents);
 		}
@@ -49,33 +51,30 @@ namespace fae
 			if (data != nullptr) {
 				--(data->ref_count);
 				if (data->ref_count == 0) {
-					if (data->type->base == primitive::OBJECT) {
-						delete object();
-					}
 					delete data;
 				}
 			}
 		}
 
 		//
-		// Recreate as Clone
+		// Create a separate instance of data
 		void unique()
 		{
+			// New null type instance
 			if (data == nullptr)
 			{
 				data = new body;
 				data->ref_count = 1;
 				data->type = nullptr;
 			}
+			// New data instance from multiple references to existing data
 			else if (data->ref_count > 1)
 			{
 				--(data->ref_count);
 				data = new body(*data);
 				data->ref_count = 1;
-				if (data->type->base == primitive::OBJECT) {
-					data->contents = new fObject(*object());
-				}
 			}
+			// If a value only has a single reference, it is already unique
 		}
 		
 	public:
@@ -131,7 +130,7 @@ namespace fae
 
 		//
 		// Existing Object Constructor
-		explicit fValue(typehead const & type, fObject * const & value)
+		explicit fValue(typehead const & type, fObject const & value)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -146,8 +145,9 @@ namespace fae
 			data = new body;
 			data->ref_count = 1;
 			data->type = type;
+
 			if (type->base == primitive::OBJECT) {
-				data->contents = new fObject();
+				data->contents = fObject();
 			}
 			if (type->base == primitive::ARRAY) {
 				data->contents = fVector<fValue>();
@@ -163,7 +163,10 @@ namespace fae
 			data->type = string_t;
 			data->contents = fVector<fValue>();
 
+			// Convert to Unicode multi-byte character set
 			icu::UnicodeString ustring = icu::UnicodeString::fromUTF8(string);
+
+			// Store into array as UTF-16 code points
 			for (index i = 0; i < ustring.length(); ++i) {
 				array().push(fValue(string_t->inner_type, ustring[i]));
 			}
@@ -173,6 +176,7 @@ namespace fae
 		// Copy Constructor
 		fValue(fValue const & source)
 		{
+			// Just add a reference, don't clone needed
 			data = source.data;
 			if (data != nullptr) {
 				++(data->ref_count);
@@ -197,8 +201,10 @@ namespace fae
 			if (source.data != nullptr) {
 				++(source.data->ref_count);
 			}
+			// Cleanup old data
 			cleanup();
 
+			// Copy in and return
 			data = source.data;
 			return *this;
 		}
@@ -210,7 +216,7 @@ namespace fae
 
 		//
 		// Get the Type
-		typehead type() const
+		typehead & type() const
 		{
 			return data->type;
 		}
@@ -218,17 +224,68 @@ namespace fae
 		//
 		// Object Related
 
+		// Note that objects do not call unique, to pass by reference
+
+		// Get a property
+		const fValue get_property(identifier & name) const
+		{
+			return object().at(name);
+		}
+
 		// Register a property
 		void register_property(identifier & name, fValue const & property)
 		{
-			unique();
-			object()->try_emplace(name, property);
+			object().try_emplace(name, property);
 		}
 
 		// Set a property
 		void set_property(identifier & name, fValue const & property)
 		{
-			object()->at(name) = property;
+			object().at(name) = property;
+		}
+
+		// Clone another object
+		void clone_object(fValue const & source)
+		{
+			object() = source.object();
+		}
+
+		// Object Union
+		void union_object(fValue const & source)
+		{
+			for (auto & it : source.object()) {
+				object().insert_or_assign(it.first, it.second);
+			}
+		}
+
+		//
+		// Array related
+
+		// Read an index
+		const fValue read_index(index const & i) const
+		{
+			return array().at[i];
+		}
+
+		// Write to an index
+		void write_index(index const & i, fValue const & element)
+		{
+			unique();
+			array().at[i] = element;
+		}
+
+		// Append another element
+		void append(fValue const & element)
+		{
+			unique();
+			array().push(element);
+		}
+
+		// Concatenate another array
+		void concatenate(fValue const & tail)
+		{
+			unique();
+			array().concatenate(tail.array());
 		}
 	};
 }
