@@ -11,6 +11,7 @@ namespace fae
 	// Possible primitive types
 	enum primitive
 	{
+		VOID,
 		BOOL,
 		NUMBER,
 		CHAR,
@@ -35,13 +36,19 @@ namespace fae
 		const typehead inner_type;
 
 		// For typed object polymorphism and function linking
-		const index head_length;
+		index head_length;
 		fVector<identifier>	poly_names;
 		fVector<typehead>	poly_types;
 
 		//
 		// Constructors
 		//
+
+		//
+		// Null Constructor
+		fType() : base(primitive::VOID), inner_type(nullptr), head_length(0)
+		{
+		}
 
 		//
 		// Primitive Constructor
@@ -87,9 +94,10 @@ namespace fae
 		//
 		// Union Object Type Constructor
 		explicit fType(primitive const & OBJECT, fVector<typehead> const & parents)
-			: base(OBJECT), head_length(parents.length), inner_type(nullptr)
+			: base(OBJECT), inner_type(nullptr)
 		{
 			// Store into new vectors
+			head_length = 0;
 			poly_names = fVector<identifier>();
 			poly_types = fVector<typehead>();
 
@@ -101,6 +109,7 @@ namespace fae
 				for (j = 0; j < parents[i]->head_length; ++j) {
 
 					// Add to front of new type
+					head_length +=  parents[i]->head_length;
 					poly_names.push(parents[i]->poly_names[j]);
 					poly_types.push(parents[i]->poly_types[j]);
 				}
@@ -114,6 +123,25 @@ namespace fae
 					poly_types.push(parents[i]->poly_types[j]);
 				}
 			}
+		}
+
+		//
+		// Use the Default Destructor
+
+		//
+		// Methods
+		//
+
+		//
+		// Polymorphic type matching
+		const bool has_polytype(typehead const & dest) const
+		{
+			for (index i = 0; i < poly_types.length; ++i) {
+				if (dest == poly_types[i]) {
+					return true;
+				}
+			}
+			return false;
 		}
 	};
 }
