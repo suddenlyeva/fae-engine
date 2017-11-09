@@ -1,12 +1,12 @@
 #pragma once
 #include <unicode/unistr.h>
-#include "fvector.h"
+#include "fvector.hpp"
 
 namespace fae
 {
 	class fType;
-	using typehead   = fType const *;
-	using identifier = std::string const;
+	using typehead   = fType *;
+	using identifier = std::string;
 
 	// Possible primitive types
 	enum primitive
@@ -65,7 +65,7 @@ namespace fae
 
 		//
 		// Base Object Type Constructor
-		explicit fType(primitive const & OBJECT, identifier & name)
+		explicit fType(primitive const & OBJECT, identifier const & name)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Store a new name
@@ -79,7 +79,7 @@ namespace fae
 
 		//
 		// Inherited Object Type Constructor
-		explicit fType(primitive const & OBJECT, identifier & name, typehead const & parent)
+		explicit fType(primitive const & OBJECT, identifier const & name, typehead const & parent)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Inherit names and add new to front

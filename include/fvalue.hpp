@@ -2,13 +2,19 @@
 #include <unordered_map>
 #include <variant>
 #include <unicode/numfmt.h>
-#include "ftype.h"
+#include "ftype.hpp"
 
 namespace fae
 {
+	//
+	// Forward Declarations
 	class fValue;
 	using fObject = std::unordered_map<identifier, fValue>;
 	using fData   = std::variant<bool, long double, UChar, fVector<fValue>, fObject>;
+
+	// Unicode formatting
+	static UErrorCode success = U_ZERO_ERROR;
+	static icu::NumberFormat * nf = icu::NumberFormat::createInstance(success);
 
 	//
 	// Generic dynamically typed data holder
@@ -167,7 +173,7 @@ namespace fae
 			icu::UnicodeString ustring = icu::UnicodeString::fromUTF8(string);
 
 			// Store into array as UTF-16 code points
-			for (index i = 0; i < ustring.length(); ++i) {
+			for (index i = 0, len = ustring.length(); i < len; ++i) {
 				array().push(fValue(string_t->inner_type, ustring[i]));
 			}
 		}
@@ -226,19 +232,19 @@ namespace fae
 		// Note that objects do not call unique, to pass by reference
 
 		// Get a property
-		const fValue get_property(identifier & name) const
+		const fValue get_property(identifier const & name) const
 		{
 			return object().at(name);
 		}
 
 		// Register a property
-		void register_property(identifier & name, fValue const & property)
+		void register_property(identifier const & name, fValue const & property)
 		{
 			object().try_emplace(name, property);
 		}
 
 		// Set a property
-		void set_property(identifier & name, fValue const & property)
+		void set_property(identifier const & name, fValue const & property)
 		{
 			object().at(name) = property;
 		}
@@ -321,10 +327,6 @@ namespace fae
 
 				// From Number
 			case primitive::NUMBER :
-
-				// Format into Unicode
-				static UErrorCode success = U_ZERO_ERROR;
-				static icu::NumberFormat * nf = icu::NumberFormat::createInstance(success);
 
 				// Check for integer
 				long double is_int;

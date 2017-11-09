@@ -1,8 +1,8 @@
 #pragma once
-#include "fvalue.h"
-#include "fvector.h"
-#include "fblock.h"
-#include "ftypemanager.h"
+#include "fvalue.hpp"
+#include "fvector.hpp"
+#include "fblock.hpp"
+#include "ftypemanager.hpp"
 #include <map>
 
 namespace fae
@@ -20,7 +20,7 @@ namespace fae
 		// For Error Handling
 		bool error;
 		std::string error_message;
-		int error_line;
+		index error_line;
 
 		//
 		// Block containers
@@ -53,7 +53,7 @@ namespace fae
 
 		//
 		// Adds a block to the machine and returns the address
-		block * new_block(index const & level, block::type type)
+		block * new_block(index const & level, block::type const & type)
 		{
 			// Dereferencing blocks.insert will return the address of the inserted block
 			return &* blocks.insert(blocks.end(), (block(level, type)));

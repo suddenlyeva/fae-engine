@@ -1,7 +1,7 @@
 #pragma once
-#include "fvector.h"
-#include "fvalue.h"
-#include "fcode.h"
+#include "fvector.hpp"
+#include "fvalue.hpp"
+#include "fcode.hpp"
 
 namespace fae
 {
