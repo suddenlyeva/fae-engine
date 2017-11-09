@@ -72,7 +72,7 @@ namespace fae
 			// Return destination for LOOP_BACK
 			struct
 			{
-				index loop_start;
+				index start_index;
 			};
 		};
 
@@ -112,7 +112,7 @@ namespace fae
 		//
 		// LOOP_BACK Constructor
 		code(index const & line, instruction const & LOOP, index const & ret)
-			: line(line), token(LOOP), loop_start(ret)
+			: line(line), token(LOOP), start_index(ret)
 		{
 		}
 
