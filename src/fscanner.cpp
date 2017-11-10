@@ -286,8 +286,7 @@ namespace fae
 				++current;
 			}
 
-			else if (std::isalpha(*current) || *current == '_')
-			{
+			else if (std::isalpha(*current) || *current == '_') {
 				next = _PROPERTY;
 				word = "";
 				do {
@@ -315,8 +314,7 @@ namespace fae
 			++current;
 
 			// Copy string
-			while (*current != q)
-			{
+			while (*current != q) {
 				s += *current;
 				++current;
 			}
@@ -403,8 +401,7 @@ namespace fae
 			}
 
 			// Words
-			else if (std::isalpha(*current) || *current == '_')
-			{
+			else if (std::isalpha(*current) || *current == '_') {
 				next = _WORD;
 				word = "";
 

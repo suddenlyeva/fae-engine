@@ -122,7 +122,7 @@ typedef uint8_t UVersionInfo[U_MAX_VERSION_LENGTH];
 #   define U_NAMESPACE_QUALIFIER U_ICU_NAMESPACE::
 
 #   ifndef U_USING_ICU_NAMESPACE
-#       define U_USING_ICU_NAMESPACE 0
+#       define U_USING_ICU_NAMESPACE 1
 #   endif
 #   if U_USING_ICU_NAMESPACE
         U_NAMESPACE_USE

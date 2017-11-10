@@ -130,6 +130,11 @@ namespace fae
 			finished = true;
 		}
 
+		typehead typeof(identifier const & type)
+		{
+			return compiler->types->primitive(type);
+		}
+
 		bool has_event(std::string const & event_name);
 
 		index get_current_line();

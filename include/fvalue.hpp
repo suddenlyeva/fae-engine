@@ -227,9 +227,22 @@ namespace fae
 		}
 
 		//
+		// Check for null
+		const bool is_null() const
+		{
+			return data != nullptr;
+		}
+
+		//
 		// Object Related
 
 		// Note that objects do not call unique, to pass by reference
+
+		// Return true if property exists
+		const bool has_property(identifier const & name) const
+		{
+			return object().count(name);
+		}
 
 		// Get a property
 		const fValue get_property(identifier const & name) const
@@ -265,6 +278,13 @@ namespace fae
 
 		//
 		// Array related
+
+		//
+		// Length of Array
+		const index array_length() const
+		{
+			return array().length;
+		}
 
 		// Read an index
 		const fValue read_index(index const & i) const
@@ -330,7 +350,7 @@ namespace fae
 
 				// Check for integer
 				long double is_int;
-				if (std::modf(number(), &is_int) == 0.0L) {
+				if (std::modfl(number(), &is_int) == 0.0L) {
 					return nf->format(static_cast<long long>(number()), result);
 				}
 				else { // Is a decimal

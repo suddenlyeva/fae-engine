@@ -24,13 +24,14 @@
     <ClInclude Include="include\fcode.hpp" />
     <ClInclude Include="include\fcompiler.hpp" />
     <ClInclude Include="include\fscanner.hpp" />
+    <ClInclude Include="include\ftype.hpp" />
     <ClInclude Include="include\ftypemanager.hpp" />
     <ClInclude Include="include\fvalue.hpp" />
     <ClInclude Include="include\fvector.hpp" />
-    <ClInclude Include="include\ftype.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\FaeWRE.cpp" />
+    <ClCompile Include="src\foperations.cpp" />
     <ClCompile Include="src\fscanner.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -85,7 +86,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>include;$(VC_IncludePath);$(WindowsSDK_IncludePath);../include</IncludePath>
-    <LibraryPath>lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>lib;../lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>src;../src;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -106,7 +108,7 @@
       </Command>
     </PreBuildEvent>
     <Link>
-      <AdditionalDependencies>icudt60.dll;icudt.lib;icuin60d.dll;icuind.lib;icuio60d.dll;icuiod.lib;icuuc60d.dll;icuucd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>icudt.lib;icuin.lib;icuio.lib;icuuc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

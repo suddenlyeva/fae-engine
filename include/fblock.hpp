@@ -10,7 +10,7 @@ namespace fae
 
 	//
 	// Points to a function that returns an fValue
-	using callback = fValue (*)(FaeEngine * machine, index const & argc, fValue const * argv);
+	using callback = fValue (*)(FaeEngine * machine, index const & argc, fValue * const & argv);
 
 	//
 	// Function handle for the execution layer

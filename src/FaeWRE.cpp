@@ -1,10 +1,7 @@
 #pragma once
 #include "fscanner.hpp"
 
-namespace fae
+int main(void)
 {
-	int main()
-	{
-		return 0;
-	}
+	return 0;
 }

@@ -64,7 +64,7 @@ namespace fae
 		}
 
 		//
-		// Base Object Type Constructor
+		// Base Class Type Constructor
 		explicit fType(primitive const & OBJECT, identifier const & name)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
@@ -78,7 +78,7 @@ namespace fae
 		}
 
 		//
-		// Inherited Object Type Constructor
+		// Inherited Class Type Constructor
 		explicit fType(primitive const & OBJECT, identifier const & name, typehead const & parent)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
@@ -92,7 +92,7 @@ namespace fae
 		}
 		
 		//
-		// Union Object Type Constructor
+		// Union Class Type Constructor
 		explicit fType(primitive const & OBJECT, fVector<typehead> const & parents)
 			: base(OBJECT), inner_type(nullptr)
 		{
@@ -105,18 +105,18 @@ namespace fae
 			index i, j;
 
 			// Loop through each typehead in order
-			for (i = 0; i < head_length; ++i) {
+			for (i = 0; i < parents.length; ++i) {
 				for (j = 0; j < parents[i]->head_length; ++j) {
 
 					// Add to front of new type
-					head_length +=  parents[i]->head_length;
+					++head_length;
 					poly_names.push(parents[i]->poly_names[j]);
 					poly_types.push(parents[i]->poly_types[j]);
 				}
 			}
 			// Loop through each tail in order
-			for (i = 0; i < head_length; ++i) {
-				for (j = parents[i]->head_length; j < parents.length; ++j) {
+			for (i = 0; i < parents.length; ++i) {
+				for (j = parents[i]->head_length; j < parents[i]->poly_types.length; ++j) {
 
 					// Add to type
 					poly_names.push(parents[i]->poly_names[j]);
@@ -136,11 +136,36 @@ namespace fae
 		// Polymorphic type matching
 		const bool has_polytype(typehead const & dest) const
 		{
-			for (index i = 0; i < poly_types.length; ++i) {
-				if (dest == poly_types[i]) {
-					return true;
+			// Generic object
+			if (dest->head_length == 0) {
+				return true;
+			}
+			// Single type matching
+			else if (dest->head_length == 1) {
+				for (index i = 0, len = poly_types.length; i < len; ++i) {
+					if (dest == poly_types[i]) {
+						return true;
+					}
 				}
 			}
+			else { // Union matching
+
+				index matches = 0;
+				// For each union type in head
+				for (index i = 0; i < dest->head_length; ++i) {
+					// Check all polytypes
+					for (index j = 0; j < poly_types.length; ++j) {
+						if (dest->poly_types[i] == poly_types[j]) {
+							++matches;
+							// Return true if every type had a match
+							if (matches == dest->head_length) {
+								return true;
+							}
+						}
+					}
+				}
+			}
+			// No matches found
 			return false;
 		}
 	};
