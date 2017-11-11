@@ -47,9 +47,9 @@ namespace fae
 	// A single code instruction for the machine to execute
 	struct code
 	{
-		instruction token; // Instruction to execute
-		index line;		   // Line number in the source code
-		fValue data;	   // Value to PUSH_VAL onto the execution stack
+		instruction command; // Instruction to execute
+		index		line;    // Line number in the source code
+		fValue		data;    // Value to PUSH_VAL onto the execution stack
 
 		//
 		// Additional instruction information for some tokens
@@ -88,38 +88,36 @@ namespace fae
 
 		//
 		// General Constructor
-		code(index const & line, instruction const & GENERAL)
-			: line(line), token(GENERAL)
+		code(index line, instruction GENERAL)
+			: line(line), command(GENERAL)
 		{
 		}
 
 		//
 		// ASSIGN/PUSH_VAR Constructor
-		code(index const & line, instruction const & VAR,
-			 index const & level, index const & var_id)
-			: line(line), token(VAR), level(level), variable(var_id)
+		code(index line, instruction VAR, index level, index var_id)
+			: line(line), command(VAR), level(level), variable(var_id)
 		{
 		}
 
 		//
 		// CALL/CALL_PUSH Constructor
-		code(index const & line, instruction const & CALL,
-			 block * const & jump, index const & argc)
-			: line(line), token(CALL), jump_location(jump), argument_count(argc)
+		code(index line, instruction CALL, block * jump, index argc)
+			: line(line), command(CALL), jump_location(jump), argument_count(argc)
 		{
 		}
 
 		//
 		// LOOP_BACK Constructor
-		code(index const & line, instruction const & LOOP, index const & ret)
-			: line(line), token(LOOP), start_index(ret)
+		code(index line, instruction LOOP, index ret)
+			: line(line), command(LOOP), start_index(ret)
 		{
 		}
 
 		//
 		// PUSH_VAL Constructor
-		code(index const & line, instruction const & PUSH, fValue const & data)
-			: line(line), token(PUSH), data(data)
+		code(index line, instruction PUSH, fValue data)
+			: line(line), command(PUSH), data(data)
 		{
 		}
 	};

@@ -34,9 +34,9 @@ namespace fae
 		// Words and .words
 		_WORD, _PROPERTY, 
 		// Basic types
-		_NUMBER, _CHAR, _STRING, 
+		_NUMBER, _CHAR, _STRING,
 		// Bracket types
-		_OPEN_PAR, _CLOSE_PAR, _OPEN_BRA, _CLOSE_BRA, _OPEN_CUR, _CLOSE_CUR, _OPEN_ABS, _CLOSE_ABS,
+		_OPEN_PAR, _CLOSE_PAR, _OPEN_BRA, _CLOSE_BRA, _OPEN_CUR, _CLOSE_CUR, _ABS,
 		// Punctuation types
 		_AMPERSAND, _ARROW, _AT, _COMMA, _COLON, _RANGE, _SEMICOLON,
 		// Assignment types
@@ -56,18 +56,17 @@ namespace fae
 	public:
 		//
 		// Tracking Fields
-		char const * current;
-		token next;
-		std::string word;
-		long double number;
-		UChar character;
-		std::string string;
-		index line;
-		bool absolute;
+		char const * current; // Current character
+		token next;			  // Token passed to parser
+		std::string word;	  // Currently stored word
+		long double number;	  // Currently stored number
+		UChar character;	  // Currently stored character
+		std::string string;	  // Currently stored string value
+		index line;			  // Current line in the source code
 
 		//
 		// Constructor
-		fScanner(char const * source) : current(source), line(1), absolute(false)
+		fScanner(char const * source) : current(source), line(1)
 		{
 			advance();
 		}
@@ -76,7 +75,7 @@ namespace fae
 		// Copy Constructor
 		fScanner(fScanner const & source)
 			: current(source.current), next(source.next),
-			  word(source.word), line(source.line), absolute(source.absolute)
+			  word(source.word), line(source.line)
 		{
 		}
 

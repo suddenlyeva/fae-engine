@@ -9,56 +9,56 @@ namespace fae
 
 	//
 	// Addition
-	fValue add(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue add(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), argv[0].number() + argv[1].number());
 	}
 
 	//
 	// Subtraction
-	fValue subtract(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue subtract(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), argv[0].number() - argv[1].number());
 	}
 
 	//
 	// Multiplication
-	fValue multiply(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue multiply(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), argv[0].number() * argv[1].number());
 	}
 
 	//
 	// Division
-	fValue divide(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue divide(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), argv[0].number() / argv[1].number());
 	}
 
 	//
 	// Remainder
-	fValue mod(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue mod(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), std::fmodl(argv[0].number(), argv[1].number()));
 	}
 
 	//
 	// Negation
-	fValue negate(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue negate(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), -argv[0].number());
 	}
 
 	//
 	// Power
-	fValue power(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue power(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("NUMBER"), std::powl(argv[0].number(), argv[1].number()));
 	}
 
 	//
 	// Comparison
-	fValue compare(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue compare(FaeEngine * machine, index argc, fValue * argv)
 	{
 		// Base type must be the same to compare
 		if (argv[0].type() == argv[1].type()) {
@@ -162,7 +162,7 @@ namespace fae
 
 	//
 	// Decrement
-	fValue decrement(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue decrement(FaeEngine * machine, index argc, fValue * argv)
 	{
 		// Case on type
 		switch (argv[0].type()->base)
@@ -204,7 +204,7 @@ namespace fae
 
 	//
 	// Increment
-	fValue increment(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue increment(FaeEngine * machine, index argc, fValue * argv)
 	{
 		// Case on type
 		switch (argv[0].type()->base)
@@ -246,28 +246,28 @@ namespace fae
 
 	//
 	// True
-	fValue true_(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue true_(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("BOOL"), true);
 	}
 
 	//
 	// False
-	fValue false_(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue false_(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("BOOL"), false);
 	}
 
 	//
 	// Not
-	fValue not_(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue not_(FaeEngine * machine, index argc, fValue * argv)
 	{
 		return fValue(machine->typeof("BOOL"), !argv[0].boolean());
 	}
 
 	//
 	// Read index
-	fValue read_index(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue read_index(FaeEngine * machine, index argc, fValue * argv)
 	{
 		// Check for Array
 		if (argv[0].type()->base != primitive::ARRAY) {
@@ -282,7 +282,7 @@ namespace fae
 		}
 
 		// Store index
-		index i = static_cast<index> (argv[1].number());
+		index i = static_cast<index> (argv[1].number() + 0.5);
 
 		// Check out of bounds
 		if (i >= argv[0].array_length()) {
@@ -311,7 +311,7 @@ namespace fae
 		}
 
 		// Store index
-		index i = static_cast<index> (argv[1].number());
+		index i = static_cast<index> (argv[1].number() + 0.5);
 
 		// Check out of bounds
 		if (i >= argv[0].array_length()) {
@@ -320,7 +320,6 @@ namespace fae
 		}
 
 		// Check type
-		// TODO: Expensive operations, maybe defer to parser
 		if (argv[0].type()->inner_type != argv[2].type()) {
 
 			// Only allow object to object polymorphism

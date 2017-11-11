@@ -15,7 +15,7 @@ namespace fae
 		// Fields
 		index length;	// Dynamic size
 		index capacity;	// Memory buffer
-		T * at;			// Starting address
+		T *	at;			// Starting address
 
 		//
 		// Constructors
@@ -89,14 +89,14 @@ namespace fae
 
 		//
 		// Read Access
-		T const & operator[] (index const & i) const
+		T const & operator[] (index i) const
 		{
 			return at[i];
 		}
 
 		//
 		// Write Access
-		T & operator[] (index const & i)
+		T & operator[] (index i)
 		{
 			return at[i];
 		}
@@ -171,7 +171,7 @@ namespace fae
 
 		//
 		// Erases an element at specified index
-		void erase(index const & target)
+		void erase(index target)
 		{
 			pop();
 			// Shift out
@@ -182,7 +182,7 @@ namespace fae
 
 		//
 		// Inserts an element at specified index
-		void insert(index const & dest, T const & value)
+		void insert(index dest, T const & value)
 		{
 			// Expand if necessary
 			if (length == capacity) {

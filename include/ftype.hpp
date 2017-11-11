@@ -6,7 +6,6 @@ namespace fae
 {
 	class fType;
 	using typehead   = fType *;
-	using identifier = std::string;
 
 	// Possible primitive types
 	enum primitive
@@ -37,7 +36,7 @@ namespace fae
 
 		// For typed object polymorphism and function linking
 		index head_length;
-		fVector<identifier>	poly_names;
+		fVector<std::string>	poly_names;
 		fVector<typehead>	poly_types;
 
 		//
@@ -52,24 +51,24 @@ namespace fae
 
 		//
 		// Primitive Constructor
-		explicit fType(primitive const & p) : base(p), inner_type(nullptr), head_length(0)
+		explicit fType(primitive p) : base(p), inner_type(nullptr), head_length(0)
 		{
 		}
 
 		//
 		// Array Constructor
-		explicit fType(primitive const & ARRAY, typehead const & element)
+		explicit fType(primitive ARRAY, typehead element)
 			: base(ARRAY), inner_type(element), head_length(0)
 		{
 		}
 
 		//
 		// Base Class Type Constructor
-		explicit fType(primitive const & OBJECT, identifier const & name)
+		explicit fType(primitive OBJECT, std::string const & name)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Store a new name
-			poly_names = fVector<identifier>();
+			poly_names = fVector<std::string>();
 			poly_names.push(name);
 
 			// Store a new type
@@ -79,7 +78,7 @@ namespace fae
 
 		//
 		// Inherited Class Type Constructor
-		explicit fType(primitive const & OBJECT, identifier const & name, typehead const & parent)
+		explicit fType(primitive OBJECT, std::string const & name, typehead parent)
 			: base(OBJECT), head_length(1), inner_type(nullptr)
 		{
 			// Inherit names and add new to front
@@ -93,12 +92,12 @@ namespace fae
 		
 		//
 		// Union Class Type Constructor
-		explicit fType(primitive const & OBJECT, fVector<typehead> const & parents)
+		explicit fType(primitive OBJECT, fVector<typehead> const & parents)
 			: base(OBJECT), inner_type(nullptr)
 		{
 			// Store into new vectors
 			head_length = 0;
-			poly_names = fVector<identifier>();
+			poly_names = fVector<std::string>();
 			poly_types = fVector<typehead>();
 
 			// Cache indices
@@ -134,14 +133,10 @@ namespace fae
 
 		//
 		// Polymorphic type matching
-		const bool has_polytype(typehead const & dest) const
+		const bool has_polytype(typehead dest) const
 		{
-			// Generic object
-			if (dest->head_length == 0) {
-				return true;
-			}
 			// Single type matching
-			else if (dest->head_length == 1) {
+			if (dest->head_length == 1) {
 				for (index i = 0, len = poly_types.length; i < len; ++i) {
 					if (dest == poly_types[i]) {
 						return true;

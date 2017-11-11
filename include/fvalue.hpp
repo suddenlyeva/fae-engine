@@ -9,7 +9,7 @@ namespace fae
 	//
 	// Forward Declarations
 	class fValue;
-	using fObject = std::unordered_map<identifier, fValue>;
+	using fObject = std::unordered_map<std::string, fValue>;
 	using fData   = std::variant<bool, long double, UChar, fVector<fValue>, fObject>;
 
 	// Unicode formatting
@@ -27,8 +27,8 @@ namespace fae
 		struct body
 		{
 			index ref_count;
-			typehead type;
-			fData contents;
+			typehead   type;
+			fData  contents;
 		};
 
 		//
@@ -96,9 +96,9 @@ namespace fae
 
 		//
 		// Boolean Constructor
-		explicit fValue(typehead const & type, bool const & value)
+		explicit fValue(typehead type, bool value)
 		{
-			data = new body;
+			data =	new body;
 			data->ref_count = 1;
 			data->type = type;
 			data->contents = value;
@@ -106,7 +106,7 @@ namespace fae
 
 		//
 		// Number Constructor
-		explicit fValue(typehead const & type, long double const & value)
+		explicit fValue(typehead type, long double value)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -116,7 +116,7 @@ namespace fae
 
 		//
 		// Character Constructor
-		explicit fValue(typehead const & type, UChar const & value)
+		explicit fValue(typehead type, UChar value)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -126,7 +126,7 @@ namespace fae
 
 		//
 		// Existing Array Constructor
-		explicit fValue(typehead const & type, fVector<fValue> const & value)
+		explicit fValue(typehead type, fVector<fValue> const & value)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -146,7 +146,7 @@ namespace fae
 
 		//
 		// Empty Object or Array Constructor
-		explicit fValue(typehead const & type)
+		explicit fValue(typehead type)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -162,7 +162,7 @@ namespace fae
 
 		//
 		// String Constructor
-		explicit fValue(typehead const & string_t, std::string const & string)
+		explicit fValue(typehead string_t, std::string const & string)
 		{
 			data = new body;
 			data->ref_count = 1;
@@ -239,25 +239,25 @@ namespace fae
 		// Note that objects do not call unique, to pass by reference
 
 		// Return true if property exists
-		const bool has_property(identifier const & name) const
+		const bool has_property(std::string const & name) const
 		{
 			return object().count(name);
 		}
 
 		// Get a property
-		const fValue get_property(identifier const & name) const
+		const fValue get_property(std::string const & name) const
 		{
 			return object().at(name);
 		}
 
 		// Register a property
-		void register_property(identifier const & name, fValue const & property)
+		void register_property(std::string const & name, fValue const & property)
 		{
 			object().try_emplace(name, property);
 		}
 
 		// Set a property
-		void set_property(identifier const & name, fValue const & property)
+		void set_property(std::string const & name, fValue const & property)
 		{
 			object().at(name) = property;
 		}
@@ -287,13 +287,13 @@ namespace fae
 		}
 
 		// Read an index
-		const fValue read_index(index const & i) const
+		const fValue read_index(index i) const
 		{
 			return array().at[i];
 		}
 
 		// Write to an index
-		void write_index(index const & i, fValue const & element)
+		void write_index(index i, fValue const & element)
 		{
 			unique();
 			array().at[i] = element;
@@ -341,6 +341,10 @@ namespace fae
 
 			switch (data->type->base)
 			{
+				// From Null
+			case primitive::VOID:
+				return u"null";
+
 				// From Boolean
 			case primitive::BOOL :
 				return boolean() ? u"true" : u"false";

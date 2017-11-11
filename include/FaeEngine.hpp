@@ -130,7 +130,7 @@ namespace fae
 			finished = true;
 		}
 
-		typehead typeof(identifier const & type)
+		typehead typeof(std::string const & type)
 		{
 			return compiler->types->primitive(type);
 		}

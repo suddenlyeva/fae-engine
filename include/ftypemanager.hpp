@@ -13,8 +13,8 @@ namespace fae
 
 		//
 		// For convenience only
-		std::unordered_map<identifier, typehead> primitives;
-		void register_primitive(identifier const & id, fType const & type)
+		std::unordered_map<std::string, typehead> primitives;
+		void register_primitive(std::string const & id, fType const & type)
 		{
 			primitives[id] = &* types.insert(types.end(), type);
 		}
@@ -50,7 +50,7 @@ namespace fae
 
 		//
 		// Get the type associated with an array of specific types
-		const typehead array(typehead const & element)
+		const typehead array(typehead element)
 		{
 			for (auto & it : types) {
 				if (it.base == primitive::ARRAY && it.inner_type == element) {
@@ -62,7 +62,7 @@ namespace fae
 
 		//
 		// Get a primitive type
-		const typehead primitive(identifier const & id) const
+		const typehead primitive(std::string const & id) const
 		{
 			return primitives.at(id);
 		}

@@ -26,7 +26,7 @@ namespace fae
 		// Block containers
 		std::list<block> blocks;	// Use double linked list for constant addresses
 		block * main_block;			// Pointer to global scope
-		std::map<identifier, block *> events;  // Machine events to be called by execution layer
+		std::map<std::string, block *> events;  // Machine events to be called by execution layer
 
 		//
 		// For type compatibility

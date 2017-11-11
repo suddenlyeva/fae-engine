@@ -412,29 +412,23 @@ namespace fae
 				} while (std::isalpha(*current) || *current == '_' || std::isdigit(*current));
 
 				// Reserved keywords
-				if (word == "events") {
-					next = _EVENTS;
-				}
-				else if (word == "new") {
-					next = _NEW;
+				if (word == "break") {
+					next = _BREAK;
 				}
 				else if (word == "class") {
 					next = _CLASS;
 				}
-				else if (word == "for") {
-					next = _FOR;
-				}
-				else if (word == "break") {
-					next = _BREAK;
-				}
-				else if (word == "on") {
-					next = _ON;
-				}
-				else if (word == "reverse") {
-					next = _REVERSE;
-				}
 				else if (word == "else") {
 					next = _ELSE;
+				}
+				else if (word == "events") {
+					next = _EVENTS;
+				}
+				else if (word == "exit") {
+					next = _EXIT;
+				}
+				else if (word == "for") {
+					next = _FOR;
 				}
 				else if (word == "function") {
 					next = _FUNCTION;
@@ -454,8 +448,17 @@ namespace fae
 				else if (word == "loop") {
 					next = _LOOP;
 				}
+				else if (word == "new") {
+					next = _NEW;
+				}
+				else if (word == "on") {
+					next = _ON;
+				}
 				else if (word == "return") {
 					next = _RETURN;
+				}
+				else if (word == "reverse") {
+					next = _REVERSE;
 				}
 				else if (word == "sub") {
 					next = _SUB;
@@ -471,9 +474,6 @@ namespace fae
 				}
 				else if (word == "yield") {
 					next = _YIELD;
-				}
-				else if (word == "exit") {
-					next = _EXIT;
 				}
 			}
 			else { // Not an accepted token
