@@ -245,8 +245,6 @@ namespace fae
 		//
 		// Object Related
 
-		// Note that objects do not call unique, to pass by reference
-
 		// Return true if property exists
 		const bool has_property(std::string const & name) const
 		{
@@ -285,7 +283,6 @@ namespace fae
 		//
 		// Array related
 
-		//
 		// Length of Array
 		const index array_length() const
 		{

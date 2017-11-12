@@ -476,4 +476,114 @@ namespace fae
 		}
 		return result;
 	}
+
+	//
+	// Round
+	fValue round(FaeEngine * machine, index argc, fValue * argv)
+	{
+		long double result = std::floorl(argv[0].number() + 0.5);
+		return fValue(machine->typeof("NUMBER"), result);
+	}
+
+	//
+	// Truncate
+	fValue truncate(FaeEngine * machine, index argc, fValue * argv)
+	{
+		long double result = argv[0].number();
+		result = (result > 0) ? std::floorl(result) : std::ceill(result);
+		return fValue(machine->typeof("NUMBER"), result);
+	}
+
+	//
+	// Ceiling
+	fValue ceil(FaeEngine * machine, index argc, fValue * argv)
+	{
+		return fValue(machine->typeof("NUMBER"), std::ceill(argv[0].number()));
+	}
+
+	//
+	// Floor
+	fValue floor(FaeEngine * machine, index argc, fValue * argv)
+	{
+		return fValue(machine->typeof("NUMBER"), std::floorl(argv[0].number()));
+	}
+
+	//
+	// Absolute
+	fValue absolute(FaeEngine * machine, index argc, fValue * argv)
+	{
+		long double result = std::fabsl(argv[0].number());
+		return fValue(machine->typeof("NUMBER"), result);
+	}
+
+	//
+	// Pi
+	fValue pi(FaeEngine * machine, index argc, fValue * argv)
+	{
+		return fValue(machine->typeof("NUMBER"), 3.14159265358979323846L);
+	}
+
+	//
+	// Register a new property on an object
+	fValue register_property(FaeEngine * machine, index argc, fValue * argv)
+	{
+		argv[2].register_property(argv[0].to_string(), argv[1]);
+		return argv[2];
+	}
+
+	//
+	// Get a property from an object
+	fValue get_property(FaeEngine * machine, index argc, fValue * argv)
+	{
+		if (argv[0].type()->base != primitive::OBJECT) {
+			machine->raise_error("Cannot access property from non-object value.");
+		}
+		return argv[0].get_property(argv[1].to_string());
+	}
+
+	//
+	// Set an object property
+	fValue set_property(FaeEngine * machine, index argc, fValue * argv)
+	{
+		if (argv[0].type()->base != primitive::OBJECT) {
+			machine->raise_error("Cannot set property for non-object value.");
+		}
+
+		argv[0].set_property(argv[2].to_string(), argv[1]);
+
+		// Void function
+		return fValue();
+	}
+
+	function const operations[] =
+	{
+		{ "true", true_, 0 },
+		{ "false", false_, 0 },
+		{ "pi", pi, 0 },
+		{ "not", not_, 1 },
+		{ "negate", negate, 1 },
+		{ "decrement", decrement, 1 },
+		{ "increment", increment, 1 },
+		{ "round", round, 1 },
+		{ "trunc", truncate, 1 },
+		{ "truncate", truncate, 1 },
+		{ "ceil", ceil, 1 },
+		{ "floor", floor, 1 },
+		{ "absolute", absolute, 1 },
+		{ "add", add, 2 },
+		{ "subtract", subtract, 2 },
+		{ "multiply", multiply, 2 },
+		{ "divide", divide, 2 },
+		{ "mod", mod, 2 },
+		{ "power", power, 2 },
+		{ "read_index", read_index, 2 },
+		{ "write_index", write_index, 3 },
+		{ "slice_index", slice_index, 3 },
+		{ "append", append, 2 },
+		{ "link", link, 2 },
+		{ "compare", compare, 2 },
+		{ "register_property", register_property, 3 },
+		{ "get_property", get_property, 2 },
+		{ "set_property", set_property, 3 }
+	};
 }
