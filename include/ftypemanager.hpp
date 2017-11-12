@@ -50,7 +50,7 @@ namespace fae
 
 		//
 		// Get the type associated with an array of specific types
-		const typehead array(typehead element)
+		const typehead arrayof(typehead element)
 		{
 			for (auto & it : types) {
 				if (it.base == primitive::ARRAY && it.inner_type == element) {
@@ -58,6 +58,27 @@ namespace fae
 				}
 			}
 			return &* types.insert(types.end(), fType(primitive::ARRAY, element));
+		}
+
+		//
+		// Get the type associated with a union of specific types
+		const typehead unionof(fType const & polyunion)
+		{
+			for (auto & it : types) {
+
+				// Same head size
+				if (it.head_length == polyunion.head_length) {
+
+					// Everything in the head matches
+					for (index i = 0; it.poly_types[i] == polyunion.poly_types[i]; ++i) {
+						if (i == it.head_length - 1) {
+							return & it;
+						}
+					}
+				}
+			}
+			// Else it's a new union
+			return &* types.insert(types.end(), polyunion);
 		}
 
 		//

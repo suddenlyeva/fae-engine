@@ -281,7 +281,7 @@ namespace fae
 			return fValue();
 		}
 
-		// Store index
+		// Round and store index
 		index i = static_cast<index> (argv[1].number() + 0.5);
 
 		// Check out of bounds
@@ -296,7 +296,7 @@ namespace fae
 
 	//
 	// Write index
-	fValue write_index(FaeEngine * machine, index const & argc, fValue * const & argv)
+	fValue write_index(FaeEngine * machine, index argc, fValue * argv)
 	{
 		// Check for Array
 		if (argv[0].type()->base != primitive::ARRAY) {
@@ -310,7 +310,7 @@ namespace fae
 			return fValue();
 		}
 
-		// Store index
+		// Round and store index
 		index i = static_cast<index> (argv[1].number() + 0.5);
 
 		// Check out of bounds
@@ -330,7 +330,7 @@ namespace fae
 			}
 
 			// Check polymorphic type match
-			if (argv[0].type()->inner_type != machine->typeof("[VOID]") &&
+			if (argv[0].type()->inner_type != machine->typeof("OBJECT") &&
 			   !argv[2].type()->has_polytype(argv[0].type())) {
 				machine->raise_error("Object type mismatch on array assignment.");
 				return fValue();
@@ -339,5 +339,141 @@ namespace fae
 
 		// All clear
 		argv[0].write_index(i, argv[2]);
+
+		// Void function
+		return fValue();
+	}
+
+	//
+	// Get an array slice
+	fValue slice_index(FaeEngine * machine, index argc, fValue * argv)
+	{
+		// Check for Array
+		if (argv[0].type()->base != primitive::ARRAY) {
+			machine->raise_error("Attempted to slice a non-array value.");
+			return fValue();
+		}
+
+		// Check negative index
+		if (argv[1].number() < 0 ||
+			argv[2].number() < 0) {
+			machine->raise_error("An array slice index is negative.");
+			return fValue();
+		}
+
+		// Round and store indices
+		index i1 = static_cast<index> (argv[1].number() + 0.5);
+		index i2 = static_cast<index> (argv[2].number() + 0.5);
+
+		// Allow i1 > i2 to return empty array
+
+		// Check out of bounds
+		if (i1 >= argv[0].array_length() ||
+			i2 >= argv[0].array_length()) {
+			machine->raise_error("An array slice index is out of bounds.");
+			return fValue();
+		}
+
+		// All clear
+		return argv[0].slice_index(i1, i2);
+	}
+
+	//
+	// Appends a value to the end of the array
+	fValue append(FaeEngine * machine, index argc, fValue * argv)
+	{
+		// Check for Array
+		if (argv[0].type()->base != primitive::ARRAY) {
+			machine->raise_error("Attempted to append to a non-array value.");
+			return fValue();
+		}
+
+		// Check type
+		if (argv[0].type() != machine->typeof("[VOID]") &&
+			argv[0].type()->inner_type != argv[1].type()) {
+
+			// Only allow object to object polymorphism
+			if (argv[0].type()->inner_type->base != primitive::OBJECT ||
+				argv[1].type()->base != primitive::OBJECT) {
+				machine->raise_error("Type mismatch on array append.");
+				return fValue();
+			}
+
+			// Check polymorphic type match
+			if (argv[0].type()->inner_type != machine->typeof("OBJECT") &&
+				!argv[1].type()->has_polytype(argv[0].type())) {
+				machine->raise_error("Object type mismatch on array append.");
+				return fValue();
+			}
+		}
+
+		fValue result = argv[0];
+		result.append(argv[1]);
+		if (result.type() == machine->typeof("[VOID]")) {
+			result.type() = machine->compiler->types->arrayof(argv[1].type());
+		}
+		return result;
+	}
+
+	//
+	// Concatenate two arrays or merge two objects
+	fValue link(FaeEngine * machine, index argc, fValue * argv)
+	{
+		fValue result = argv[0];
+		fValue append = argv[1];
+
+		// Object to object union
+		if (result.type()->base == primitive::OBJECT &&
+			append.type()->base == primitive::OBJECT) {
+
+			result.union_object(append);
+
+			// Type morphing
+			if (append.type() != machine->typeof("OBJECT")) {
+
+				// Generic objects become the type on the right
+				if (result.type() == machine->typeof("OBJECT")) {
+					result.type() = append.type();
+				}
+				else { // Both objects have a complex type
+					fVector<typehead> polyunion = fVector<typehead>();
+					polyunion.push(result.type());
+					polyunion.push(append.type());
+
+					// Create a new type from the combined typeheads
+					fType uniontype = fType(primitive::OBJECT, polyunion);
+
+					// Get the equivalent union from the type manager, or regsiter as new
+					result.type() = machine->compiler->types->unionof(uniontype);
+				}
+			}
+		}
+		else { // Array to Array concatenation
+
+			// Implicit string conversion
+			if (result.type()->base != primitive::ARRAY) {
+				result = fValue(machine->typeof("STRING"), result.to_string());
+			}
+			if (append.type()->base != primitive::ARRAY) {
+				result = fValue(machine->typeof("STRING"), result.to_string());
+			}
+
+			// The types are different, and neither is an empty array
+			if (result.type() != machine->typeof("[VOID]") &&
+				append.type() != machine->typeof("[VOID]") &&
+				result.type() != append.type()) {
+				machine->raise_error("Type mismatch on array concatenation.");
+				return fValue();
+			}
+
+			// All clear
+			result.concatenate(append);
+
+			// Type morph empty arrays into right hand side.
+			if (result.type() == machine->typeof("[VOID]")) {
+				result.type() = append.type();
+			}
+		}
+		return result;
 	}
 }

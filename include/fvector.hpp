@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <algorithm>
 
 namespace fae 
 {
@@ -38,9 +39,12 @@ namespace fae
 			// Copy existing elements
 			if (capacity > 0) {
 				at = new T[capacity];
-				for (index i = 0; i < source.length; ++i) {
+
+				std::copy(source.at, & source.at[length], at);
+				
+				/*for (index i = 0; i < source.length; ++i) {
 					at[i] = source.at[i];
-				}
+				}*/
 			}
 			else { // Source is empty
 				at = nullptr;
@@ -76,9 +80,10 @@ namespace fae
 			// Copy existing elements
 			if (capacity > 0) {
 				at = new T[capacity];
-				for (index i = 0; i < source.length; ++i) {
+				std::copy(source.at, & source.at[length], at);
+				/*for (index i = 0; i < source.length; ++i) {
 					at[i] = source.at[i];
-				}
+				}*/
 			}
 			else { // Source is empty
 				at = nullptr;
@@ -121,9 +126,10 @@ namespace fae
 				T * temp = new T[capacity];
 
 				// Copy old contents and free old memory
-				for (index i = 0; i < length; ++i) {
+				std::copy(at, & at[length], temp);
+				/*for (index i = 0; i < length; ++i) {
 					temp[i] = at[i];
-				}
+				}*/
 				// Replace buffer
 				delete[] at;
 				at = temp;
@@ -216,20 +222,48 @@ namespace fae
 				T * temp = new T[capacity];
 
 				// Copy into new buffer
-				for (i = 0; i < length; ++i) {
+				std::copy(at, & at[length], temp);
+				/*for (i = 0; i < length; ++i) {
 					temp[i] = at[i];
-				}
+				}*/
 
 				// Replace old buffer
 				delete[] at;
 				at = temp;
 			}
 			// Copy append into array
-			for (i = length; i < newLength; ++i) {
+			std::copy(append.at, & append.at[append.length], & at[length]);
+			/*for (i = length; i < newLength; ++i) {
 				at[i] = append.at[i];
-			}
+			}*/
 			// Update length
 			length = newLength;
+		}
+
+		//
+		// Returns a slice of the array
+		fVector slice(index start, index end)
+		{
+			fVector result = fVector();
+
+			if (end >= start) {
+
+				// Assume at least one element
+				result.capacity = 4;
+
+				// Slice inclusively
+				result.length = end + 1 - start;
+
+				// Expand result to correct size
+				while (result.capacity < result.length) {
+					result.capacity *= 2;
+				}
+				result.at = new T[result.capacity];
+
+				// Copy and return
+				std::copy(&at[start], &at[end + 1], result.at);
+			}
+			return result;
 		}
 	};
 }

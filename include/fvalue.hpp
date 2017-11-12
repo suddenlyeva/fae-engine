@@ -76,9 +76,18 @@ namespace fae
 			// New data instance from multiple references to existing data
 			else if (data->ref_count > 1)
 			{
-				--(data->ref_count);
-				data = new body(*data);
-				data->ref_count = 1;
+				// Deep clone arrays
+				if (data->type->base == primitive::ARRAY) {
+					for (index i = 0, len = array().length; i < len; ++i) {
+						array().at[i].unique();
+					}
+				}
+				// Keep object references
+				else if (data->type->base != primitive::OBJECT) {
+					--(data->ref_count);
+					data = new body(*data);
+					data->ref_count = 1;
+				}
 			}
 			// If a value only has a single reference, it is already unique
 		}
@@ -247,7 +256,10 @@ namespace fae
 		// Get a property
 		const fValue get_property(std::string const & name) const
 		{
-			return object().at(name);
+			fValue result = object().at(name);
+			// Changes in the object should not be reflected in other variables
+			result.unique();
+			return result;
 		}
 
 		// Register a property
@@ -260,12 +272,6 @@ namespace fae
 		void set_property(std::string const & name, fValue const & property)
 		{
 			object().at(name) = property;
-		}
-
-		// Clone another object
-		void clone_object(fValue const & source)
-		{
-			object() = source.object();
 		}
 
 		// Object Union
@@ -292,10 +298,15 @@ namespace fae
 			return array().at[i];
 		}
 
+		// Get an array slice
+		const fValue slice_index(index start, index end) const
+		{
+			return fValue(data->type, array().slice(start, end));
+		}
+
 		// Write to an index
 		void write_index(index i, fValue const & element)
 		{
-			unique();
 			array().at[i] = element;
 		}
 
